@@ -21,7 +21,7 @@ Handles:
 
 This becomes “the multiplayer runtime.”
 
-2. Auth Service
+## 2. Auth Service
 Tiny and boring.
 
 Handles:
@@ -30,7 +30,7 @@ Handles:
 * tokens,
 * account creation.
 
-3. Campaign Service
+## 3. Campaign Service
 
 Persistent world state.
 
@@ -41,7 +41,7 @@ Handles:
 * permissions,
 * identities.
 
-4. Chat Service
+## 4. Chat Service
 
 Actually more important than people think.
 
@@ -51,9 +51,9 @@ Handles:
 * GM channels,
 * routing rules.
 
-5. Scene/Map Service
+## 5. Scene/Map Service
 
-Largest domain for mas/scene.
+Largest domain for maps/scene.
 
 Handles:
 * maps,
