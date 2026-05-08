@@ -1,12 +1,15 @@
-Gateway/API
-Auth
-Campaigns
-Realtime
-Chat
-Maps/Scenes
-Storage
+# Veil Server Domains
 
-1. Gateway Service
+Domains:
+- Gateway/API
+- Auth
+- Campaigns
+- Realtime
+- Chat
+- Maps/Scenes
+- Storage
+
+## 1. Gateway Service
 the only public-facing service.
 
 Handles:
