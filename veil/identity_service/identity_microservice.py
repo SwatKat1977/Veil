@@ -1,20 +1,23 @@
 import asyncio
+from quart import Quart
 from veil.common.base_microservice import BaseMicroservice
 from veil.common import LICENSE_TEXT, SERVICE_COPYRIGHT_TEXT, __version__
 
 
 class IdentityMicroservice(BaseMicroservice):
-    """ ITEMS Accounts Service """
+    """ VEIL Identity Service. """
 
-    def __init__(self, quart_instance):
+    SERVICE_NAME = "veil.identityService"
+
+    def __init__(self, quart_instance: Quart):
         super().__init__()
         self._quart_instance = quart_instance
 
     async def _initialise(self) -> bool:
 
-        self._logger.info("VEIL Identity Microservice %s", __version__)
-        self._logger.info(SERVICE_COPYRIGHT_TEXT)
-        self._logger.info(LICENSE_TEXT)
+        self.logger.info("VEIL Identity Microservice %s", __version__)
+        self.logger.info(SERVICE_COPYRIGHT_TEXT)
+        self.logger.info(LICENSE_TEXT)
 
         return True
 
@@ -24,7 +27,7 @@ class IdentityMicroservice(BaseMicroservice):
             asyncio.create_task(self._wait_forever())
         ]
 
-    async def _shutdown(self):
+    async def _shutdown(self) -> None:
         """ Application shutdown. """
 
     async def _wait_forever(self) -> None:
