@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from functools import wraps
 import http
 import json
+import typing
 import aiohttp
 import jsonschema
 import quart
@@ -12,12 +13,12 @@ import quart
 class ApiResponse:
     """ Class for keeping track of api return data. """
     status_code: int = 0
-    body: dict | str | None = None
-    content_type : str | None  = None
-    exception_msg : str | None  = None
+    body: typing.Any = None
+    content_type: str | None  = None
+    exception_msg: str | None  = None
 
 
-def validate_json(schema):
+def validate_json(schema: dict):
     """
     Decorator to validate the JSON request body against a given schema.
 
@@ -96,12 +97,12 @@ class BaseApiRoute:
     """ Base view class """
     # pylint: disable=too-few-public-methods
 
-    ERR_MSG_INVALID_BODY_TYPE : str = "Invalid body type, not JSON"
-    ERR_MSG_MISSING_INVALID_JSON_BODY : str = "Missing/invalid json body"
-    ERR_MSG_BODY_SCHEMA_MISMATCH : str = "Message body failed schema validation"
+    ERR_MSG_INVALID_BODY_TYPE: str = "Invalid body type, not JSON"
+    ERR_MSG_MISSING_INVALID_JSON_BODY: str = "Missing/invalid json body"
+    ERR_MSG_BODY_SCHEMA_MISMATCH: str = "Message body failed schema validation"
 
-    CONTENT_TYPE_JSON : str = 'application/json'
-    CONTENT_TYPE_TEXT : str = 'text/plain'
+    CONTENT_TYPE_JSON: str = 'application/json'
+    CONTENT_TYPE_TEXT: str = 'text/plain'
 
     def validate_json_body(self, data: bytes | str, json_schema: dict = None) \
             -> ApiResponse:
@@ -118,7 +119,7 @@ class BaseApiRoute:
             ApiResponse : If successful then object is a valid object.
         """
 
-        if data is None:
+        if not data:
             return ApiResponse(exception_msg=self.ERR_MSG_MISSING_INVALID_JSON_BODY,
                                status_code=http.HTTPStatus.BAD_REQUEST,
                                content_type=self.CONTENT_TYPE_TEXT)
@@ -166,25 +167,16 @@ class BaseApiRoute:
         try:
             async with aiohttp.ClientSession(
                     timeout=aiohttp.ClientTimeout(total=timeout)) as session:
-                async with session.post(url, json=json_data) as resp:
-                    body = await resp.json() \
-                        if resp.content_type == self.CONTENT_TYPE_JSON \
-                        else await resp.text()
-                    api_return = ApiResponse(
-                        status_code=resp.status,
-                        body=body,
-                        content_type=resp.content_type)
+                async with session.post(url, json=json_data) as response:
+                    return await self._parse_response(response)
 
         except (aiohttp.ClientConnectionError, aiohttp.ClientError) as ex:
-            api_return = ApiResponse(exception_msg=str(ex))
+            return ApiResponse(exception_msg=str(ex))
 
         except asyncio.TimeoutError as ex:
-            api_return = ApiResponse(exception_msg=str(ex))
-
-        return api_return
+            return ApiResponse(exception_msg=str(ex))
 
     async def _call_api_get(self, url: str,
-                            json_data: dict = None,
                             timeout: int = 2) -> ApiResponse:
         """
         Make an API call using the GET method.
@@ -201,22 +193,14 @@ class BaseApiRoute:
         try:
             async with aiohttp.ClientSession(
                     timeout=aiohttp.ClientTimeout(total=timeout)) as session:
-                async with session.get(url, json=json_data) as resp:
-                    body = await resp.json() \
-                        if resp.content_type == self.CONTENT_TYPE_JSON \
-                        else await resp.text()
-                    api_return = ApiResponse(
-                        status_code=resp.status,
-                        body = body,
-                        content_type = resp.content_type)
+                async with session.get(url) as response:
+                    return await self._parse_response(response)
 
         except (aiohttp.ClientConnectionError, aiohttp.ClientError) as ex:
-            api_return = ApiResponse(exception_msg=str(ex))
+            return ApiResponse(exception_msg=str(ex))
 
         except asyncio.TimeoutError as ex:
-            api_return = ApiResponse(exception_msg=str(ex))
-
-        return api_return
+            return ApiResponse(exception_msg=str(ex))
 
     async def _call_api_delete(self, url: str,
                                json_data: dict = None,
@@ -236,22 +220,14 @@ class BaseApiRoute:
         try:
             async with aiohttp.ClientSession(
                     timeout=aiohttp.ClientTimeout(total=timeout)) as session:
-                async with session.delete(url, json=json_data) as resp:
-                    body = await resp.json() \
-                        if resp.content_type == self.CONTENT_TYPE_JSON \
-                        else await resp.text()
-                    api_return = ApiResponse(
-                        status_code=resp.status,
-                        body=body,
-                        content_type=resp.content_type)
+                async with session.delete(url, json=json_data) as response:
+                    return await self._parse_response(response)
 
         except (aiohttp.ClientConnectionError, aiohttp.ClientError) as ex:
-            api_return = ApiResponse(exception_msg=str(ex))
+            return ApiResponse(exception_msg=str(ex))
 
         except asyncio.TimeoutError as ex:
-            api_return = ApiResponse(exception_msg=str(ex))
-
-        return api_return
+            return ApiResponse(exception_msg=str(ex))
 
     async def _call_api_patch(self, url: str,
                               json_data: dict = None,
@@ -259,19 +235,52 @@ class BaseApiRoute:
         try:
             async with aiohttp.ClientSession(
                     timeout=aiohttp.ClientTimeout(total=timeout)) as session:
-                async with session.patch(url, json=json_data) as resp:
-                    body = await resp.json() \
-                        if resp.content_type == self.CONTENT_TYPE_JSON \
-                        else await resp.text()
-                    api_return = ApiResponse(
-                        status_code=resp.status,
-                        body=body,
-                        content_type=resp.content_type)
+                async with session.patch(url, json=json_data) as response:
+                    return await self._parse_response(response)
 
         except (aiohttp.ClientConnectionError, aiohttp.ClientError) as ex:
-            api_return = ApiResponse(exception_msg=str(ex))
+            return ApiResponse(exception_msg=str(ex))
 
         except asyncio.TimeoutError as ex:
-            api_return = ApiResponse(exception_msg=str(ex))
+            return ApiResponse(exception_msg=str(ex))
 
-        return api_return
+    async def _parse_response(
+            self,
+            response: aiohttp.ClientResponse) -> ApiResponse:
+        """
+        Parse an aiohttp response into a standard ApiResponse object.
+
+        Args:
+            response:
+                The aiohttp response object.
+
+        Returns:
+            ApiResponse containing the parsed response data.
+        """
+
+        try:
+            raw_body = await response.text()
+
+            if not raw_body:
+                body = None
+
+            elif response.content_type in self.CONTENT_TYPE_JSON:
+                body = json.loads(raw_body)
+
+            else:
+                body = raw_body
+
+        except (
+                aiohttp.ClientError,
+                aiohttp.ContentTypeError,
+                json.JSONDecodeError) as ex:
+
+            return ApiResponse(
+                status_code=response.status,
+                exception_msg=str(ex),
+                content_type=response.content_type)
+
+        return ApiResponse(
+            status_code=response.status,
+            body=body,
+            content_type=response.content_type)
