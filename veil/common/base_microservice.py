@@ -28,10 +28,12 @@ from veil.common.logging_consts import LOGGING_DATETIME_FORMAT_STRING, \
 class BaseMicroservice(abc.ABC):
     """ Base microservice class. """
     __slots__ = ["_is_initialised", "_logger", "_shutdown_complete",
-                 "_shutdown_event", "_service_state"]
+                 "_shutdown_event", "_service_state", "_tasks"]
 
     BOOL_TRUE_VALUES: set = {"1", "true", "yes", "on"}
     BOOL_FALSE_VALUES: set = {"0", "false", "no", "off"}
+
+    SERVICE_NAME: str = "Microservice"
 
     def __init__(self):
         self._is_initialised: bool = False
@@ -39,14 +41,17 @@ class BaseMicroservice(abc.ABC):
         self._shutdown_event: asyncio.Event = asyncio.Event()
         self._shutdown_complete: asyncio.Event = asyncio.Event()
         self._service_state: ServiceState = ServiceState(version=__version__)
+        self._tasks: list[asyncio.Task] = []
 
-        self._logger: logging.Logger = logging.getLogger(__name__)
-        log_format= logging.Formatter(LOGGING_LOG_FORMAT_STRING,
-                                      LOGGING_DATETIME_FORMAT_STRING)
+        self._logger: logging.Logger = logging.getLogger(f"veil.{self.SERVICE_NAME}")
+        log_format = logging.Formatter(LOGGING_LOG_FORMAT_STRING,
+                                       LOGGING_DATETIME_FORMAT_STRING)
         console_stream = logging.StreamHandler()
         console_stream.setFormatter(log_format)
         self._logger.setLevel(LOGGING_DEFAULT_LOG_LEVEL)
-        self._logger.addHandler(console_stream)
+
+        if not self._logger.handlers:
+            self._logger.addHandler(console_stream)
 
     @property
     def logger(self) -> logging.Logger:
@@ -102,18 +107,25 @@ class BaseMicroservice(abc.ABC):
         """
 
         if not self._is_initialised:
-            self._logger.warning("Microservice is not initialised. Exiting run loop.")
+            self._logger.warning(
+                "Microservice is not initialised. Exiting run loop."
+            )
             return
 
-        self._logger.info("Microservice starting main loop.")
+        self._logger.info("Microservice starting.")
 
         try:
-            while True:
-                if self.shutdown_event.is_set():
-                    break
+            self._tasks = await self._create_tasks()
 
-                await self._main_loop()
-                await asyncio.sleep(0.1)
+            results = await asyncio.gather(*self._tasks,
+                                           return_exceptions=True)
+
+            for result in results:
+                if isinstance(result, Exception):
+                    self._logger.error(
+                        "Task terminated with exception",
+                        exc_info=result
+                    )
 
         except KeyboardInterrupt:
             self._logger.debug("Service: Keyboard interrupt received.")
@@ -124,7 +136,7 @@ class BaseMicroservice(abc.ABC):
             raise
 
         finally:
-            self._logger.info("Exiting microservice run loop...")
+            self._logger.info("Exiting microservice...")
             await self.stop()
             self._logger.info("Shutdown complete.")
 
@@ -139,7 +151,15 @@ class BaseMicroservice(abc.ABC):
 
         self._shutdown_event.set()
 
+        for task in self._tasks:
+            task.cancel()
+
+        await asyncio.gather(
+            *self._tasks,
+            return_exceptions=True)
+
         await self._shutdown()
+
         self._shutdown_complete.set()
 
         self._logger.info('Microservice shutdown complete...')
@@ -155,11 +175,11 @@ class BaseMicroservice(abc.ABC):
         return True
 
     @abc.abstractmethod
-    async def _main_loop(self) -> None:
-        """ Abstract method for main microservice loop. """
+    async def _create_tasks(self) -> list[asyncio.Task]:
+        """ Create and return the service's background tasks. """
 
     @abc.abstractmethod
-    async def _shutdown(self):
+    async def _shutdown(self) -> None:
         """ Abstract method for microservice shutdown. """
 
     def _check_for_configuration(self,
