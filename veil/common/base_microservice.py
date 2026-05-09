@@ -41,7 +41,7 @@ class BaseMicroservice(abc.ABC):
         self._shutdown_event: asyncio.Event = asyncio.Event()
         self._shutdown_complete: asyncio.Event = asyncio.Event()
         self._service_state: ServiceState = ServiceState(version=__version__)
-        self._tasks: list[asyncio.Task] = []
+        self._tasks: list[asyncio.Task[typing.Any]] = []
 
         self._logger: logging.Logger = logging.getLogger(f"veil.{self.SERVICE_NAME}")
         log_format = logging.Formatter(LOGGING_LOG_FORMAT_STRING,
@@ -145,6 +145,9 @@ class BaseMicroservice(abc.ABC):
         Stop the microservice, it will wait until shutdown has been marked as
         completed before calling the shutdown method.
         """
+
+        if self._shutdown_complete.is_set():
+            return
 
         self._logger.info("Stopping microservice...")
         self._logger.info('Waiting for microservice shutdown to complete')
