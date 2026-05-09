@@ -3,13 +3,12 @@ from dataclasses import dataclass
 from functools import wraps
 import http
 import json
-import typing
 import aiohttp
 import jsonschema
 import quart
 
 
-@dataclass()
+@dataclass(slots=True)
 class ApiResponse:
     """ Class for keeping track of api return data. """
     status_code: int = 0
@@ -24,7 +23,8 @@ def validate_json(schema):
 
     This decorator:
     - Extracts and validates the JSON request body using the provided schema.
-    - If validation fails, returns an HTTP 500 response with an error message.
+    - If validation fails, returns an HTTP bad request response with an error
+      message.
     - If validation succeeds, passes the validated data (`request_msg`) to the
       wrapped function.
 
@@ -103,16 +103,8 @@ class BaseApiRoute:
     CONTENT_TYPE_JSON : str = 'application/json'
     CONTENT_TYPE_TEXT : str = 'text/plain'
 
-    def validate_json_body(self, data: str, json_schema: dict = None) \
-            -> typing.Optional[ApiResponse]:
-        """
-        This is a temporary work around as changing _validate_json_body*()
-        would be fairly breaking. This needs to be fixed!
-        """
-        return self._validate_json_body(data, json_schema)
-
-    def _validate_json_body(self, data: str, json_schema: dict = None) \
-            -> typing.Optional[ApiResponse]:
+    def validate_json_body(self, data: bytes | str, json_schema: dict = None) \
+            -> ApiResponse:
         """
         Validate response body is JSON.
 
@@ -219,7 +211,7 @@ class BaseApiRoute:
                         content_type = resp.content_type)
 
         except (aiohttp.ClientConnectionError, aiohttp.ClientError) as ex:
-            api_return = ApiResponse(exception_msg=ex)
+            api_return = ApiResponse(exception_msg=str(ex))
 
         except asyncio.TimeoutError as ex:
             api_return = ApiResponse(exception_msg=str(ex))
