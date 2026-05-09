@@ -13,6 +13,7 @@ import quart
 class ApiResponse:
     """ Class for keeping track of api return data. """
     status_code: int = 0
+    headers: dict[str, str] | None = None
     body: typing.Any = None
     content_type: str | None  = None
     exception_msg: str | None  = None
@@ -111,11 +112,11 @@ class BaseApiRoute:
 
         NOTE: This has not been optimised, it can and should be in the future!
 
-        parameters:
-            data : Response body to validate.
-            json_schema : Optional Json schema to validate the body against.
+        Args:
+            data: Response body to validate.
+            json_schema: Optional Json schema to validate the body against.
 
-        returns:
+        Returns:
             ApiResponse : If successful then object is a valid object.
         """
 
@@ -150,18 +151,22 @@ class BaseApiRoute:
                            content_type=self.CONTENT_TYPE_JSON)
 
     async def _call_api_post(self, url: str,
-                             json_data: dict = None,
+                             json_data: dict | None = None,
                              timeout: int = 2) -> ApiResponse:
-        """
-        Make an API call using the POST method.
+        """Send an asynchronous HTTP POST request to an API endpoint.
 
-        parameters:
-            url - URL of the endpoint
-            json_data - Optional Json body.
+        Args:
+            url: The target API endpoint URL.
+            json_data: Optional JSON payload to include in the request body.
+            timeout: Total request timeout in seconds.
 
-        returns:
-            ApiResponse which will contain response data or just
-            exception_msg if something went wrong.
+        Returns:
+            An ``ApiResponse`` object containing the parsed response data
+            or exception details if the request failed.
+
+        Raises:
+            This method does not raise exceptions directly. Connection and
+            timeout errors are caught and returned inside the ``ApiResponse``.
         """
 
         try:
@@ -171,21 +176,23 @@ class BaseApiRoute:
                     return await self._parse_response(response)
 
         except (aiohttp.ClientConnectionError, aiohttp.ClientError) as ex:
-            return ApiResponse(exception_msg=str(ex))
+            return ApiResponse(status_code=http.HTTPStatus.SERVICE_UNAVAILABLE,
+                               exception_msg=str(ex))
 
         except asyncio.TimeoutError as ex:
-            return ApiResponse(exception_msg=str(ex))
+            return ApiResponse(status_code=http.HTTPStatus.GATEWAY_TIMEOUT,
+                               exception_msg=str(ex))
 
     async def _call_api_get(self, url: str,
                             timeout: int = 2) -> ApiResponse:
         """
         Make an API call using the GET method.
 
-        parameters:
-            url - URL of the endpoint
-            json_data - Optional Json body.
+        Args:
+            url: URL of the endpoint.
+            timeout: Total request timeout in seconds.
 
-        returns:
+        Returns:
             ApiResponse which will contain response data or just
             exception_msg if something went wrong.
         """
@@ -203,16 +210,17 @@ class BaseApiRoute:
             return ApiResponse(exception_msg=str(ex))
 
     async def _call_api_delete(self, url: str,
-                               json_data: dict = None,
+                               json_data: dict | None = None,
                                timeout: int = 2) -> ApiResponse:
         """
         Make an API call using the DELETE method.
 
-        parameters:
-            url - URL of the endpoint
-            json_data - Optional Json body.
+        Args:
+            url: URL of the endpoint
+            json_data: Optional Json body.
+            timeout: Total request timeout in seconds.
 
-        returns:
+        Returns:
             ApiResponse which will contain response data or just
             exception_msg if something went wrong.
         """
@@ -230,8 +238,21 @@ class BaseApiRoute:
             return ApiResponse(exception_msg=str(ex))
 
     async def _call_api_patch(self, url: str,
-                              json_data: dict = None,
+                              json_data: dict | None = None,
                               timeout: int = 2) -> ApiResponse:
+        """
+        Make an API call using the PATCH method.
+
+        Args:
+            url: URL of the endpoint
+            json_data: Optional Json body.
+            timeout: Total request timeout in seconds.
+
+        Returns:
+            ApiResponse which will contain response data or just
+            exception_msg if something went wrong.
+        """
+
         try:
             async with aiohttp.ClientSession(
                     timeout=aiohttp.ClientTimeout(total=timeout)) as session:
@@ -261,10 +282,10 @@ class BaseApiRoute:
         try:
             raw_body = await response.text()
 
-            if not raw_body:
+            if raw_body == "":
                 body = None
 
-            elif response.content_type in self.CONTENT_TYPE_JSON:
+            elif self.CONTENT_TYPE_JSON in response.content_type:
                 body = json.loads(raw_body)
 
             else:
@@ -277,10 +298,12 @@ class BaseApiRoute:
 
             return ApiResponse(
                 status_code=response.status,
+                headers=dict(response.headers),
                 exception_msg=str(ex),
                 content_type=response.content_type)
 
         return ApiResponse(
             status_code=response.status,
+            headers=dict(response.headers),
             body=body,
             content_type=response.content_type)
