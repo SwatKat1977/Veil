@@ -27,8 +27,9 @@ from veil.common.logging_consts import LOGGING_DATETIME_FORMAT_STRING, \
 
 class BaseMicroservice(abc.ABC):
     """ Base microservice class. """
-    __slots__ = ["_is_initialised", "_logger", "_shutdown_complete",
-                 "_shutdown_event", "_service_state", "_tasks"]
+    __slots__ = ["_is_initialised", "_is_stopping", "_logger",
+                 "_shutdown_complete", "_shutdown_event", "_service_state",
+                 "_tasks"]
 
     BOOL_TRUE_VALUES: set = {"1", "true", "yes", "on"}
     BOOL_FALSE_VALUES: set = {"0", "false", "no", "off"}
@@ -52,6 +53,8 @@ class BaseMicroservice(abc.ABC):
 
         if not self._logger.handlers:
             self._logger.addHandler(console_stream)
+
+        self._is_stopping: bool = False
 
     @property
     def logger(self) -> logging.Logger:
@@ -145,6 +148,11 @@ class BaseMicroservice(abc.ABC):
         Stop the microservice, it will wait until shutdown has been marked as
         completed before calling the shutdown method.
         """
+
+        if self._is_stopping:
+            return
+
+        self._is_stopping = True
 
         if self._shutdown_complete.is_set():
             return
