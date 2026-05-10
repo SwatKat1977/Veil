@@ -17,6 +17,7 @@ import asyncio
 from quart import Quart
 from veil.common.base_microservice import BaseMicroservice
 from veil.common import LICENSE_TEXT, SERVICE_COPYRIGHT_TEXT, __version__
+from veil.identity_service.routes import create_blueprints
 
 
 class IdentityMicroservice(BaseMicroservice):
@@ -33,6 +34,8 @@ class IdentityMicroservice(BaseMicroservice):
         self.logger.info("VEIL Identity Microservice %s", __version__)
         self.logger.info(SERVICE_COPYRIGHT_TEXT)
         self.logger.info(LICENSE_TEXT)
+
+        create_blueprints(self.logger)
 
         return True
 

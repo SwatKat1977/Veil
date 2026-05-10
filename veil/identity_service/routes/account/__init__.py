@@ -15,13 +15,14 @@ limitations under the License.
 """
 import logging
 import quart
-from veil.identity_service.routes.account import create_account_blueprints
+from veil.identity_service.routes.account.register_account_route import \
+    create_blueprint as register_account_blueprint
 
 
-def create_blueprints(logger: logging.Logger) -> quart.Blueprint:
-    api_routes = quart.Blueprint("api_routes", __name__)
+def create_account_blueprints(logger: logging.Logger) -> quart.Blueprint:
+    account_blueprint = quart.Blueprint("account_routes", __name__)
 
-    # Account routes
-    api_routes.register_blueprint(create_account_blueprints(logger))
+    # Register account route
+    account_blueprint.register_blueprint(register_account_blueprint(logger))
 
-    return api_routes
+    return account_blueprint
