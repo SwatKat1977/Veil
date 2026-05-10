@@ -31,26 +31,26 @@ def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
         A configured Quart blueprint containing the system health
         endpoint.
     """
-    route = LogoutAccountRoute(logger)
+    route = HealthRoute(logger)
 
-    blueprint = quart.Blueprint('logout_account', __name__)
+    blueprint = quart.Blueprint('health', __name__)
 
-    logger.debug("=> %s POST /accounts/logout",
-                 'Logout account session'.ljust(40))
+    logger.debug("=> %s GET /system/health",
+                 'Get system health'.ljust(40))
 
-    @blueprint.route('/accounts/logout', methods=['POST'])
-    async def logout_account_request():
+    @blueprint.route('/system/health', methods=['GET'])
+    async def health_request():
         """Handle incoming system health requests.
 
         Returns:
             A response containing the current system health status.
         """
-        return await route.logout_account()
+        return await route.health()
 
     return blueprint
 
 
-class LogoutAccountRoute(BaseApiRoute):
+class HealthRoute(BaseApiRoute):
     """Route handler for system health endpoints."""
 
     def __init__(self, logger: logging.Logger) -> None:
@@ -62,12 +62,15 @@ class LogoutAccountRoute(BaseApiRoute):
         """
         self._logger = logger.getChild(__name__)
 
-    async def logout_account(self) -> quart.Response:
+    async def health(self) -> quart.Response:
         """Handle a system health request.
 
         Returns:
             A JSON HTTP response indicating the system health status.
         """
-        return quart.Response(json.dumps({}),
-                              status=http.HTTPStatus.OK,
-                              content_type=self.CONTENT_TYPE_JSON)
+        return quart.Response(
+            json.dumps({
+                'status': 'ok'
+            }),
+            status=http.HTTPStatus.OK,
+            content_type=self.CONTENT_TYPE_JSON)

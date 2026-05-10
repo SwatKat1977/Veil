@@ -44,7 +44,7 @@ def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
                  'Register new account'.ljust(40))
 
     @blueprint.route('/accounts/register', methods=['POST'])
-    async def register_account_request():
+    async def register_account_request() -> quart.Response:
         """Handle incoming account registration requests.
 
         Returns:
