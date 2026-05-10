@@ -20,6 +20,18 @@ from veil.identity_service.routes.system.health_route import \
 
 
 def create_system_blueprints(logger: logging.Logger) -> quart.Blueprint:
+    """Create and register system-related blueprints.
+
+    This function creates the parent system blueprint and registers
+    all system-level route blueprints, such as health check routes.
+
+    Args:
+        logger: Logger instance used by system route handlers.
+
+    Returns:
+        The configured system blueprint containing all registered
+        system routes.
+    """
     system_blueprint = quart.Blueprint("system_routes", __name__)
 
     # Health route
