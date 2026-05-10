@@ -41,7 +41,7 @@ def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
     blueprint = quart.Blueprint('register_account', __name__)
 
     logger.debug("=> %s POST /accounts/register",
-                 'Register new account'.ljust(30))
+                 'Register new account'.ljust(40))
 
     @blueprint.route('/accounts/register', methods=['POST'])
     async def register_account_request():
