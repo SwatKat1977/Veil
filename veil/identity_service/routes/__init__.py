@@ -20,6 +20,20 @@ from veil.identity_service.routes.auth import create_auth_blueprints
 
 
 def create_blueprints(logger: logging.Logger) -> quart.Blueprint:
+    """Create and register all API route blueprints.
+
+    This function creates the root API blueprint and registers all
+    child blueprints for the identity service, including account
+    management and authentication routes.
+
+    Args:
+        logger: Logger instance used by route handlers throughout
+            the API.
+
+    Returns:
+        The configured root API blueprint containing all registered
+        API routes.
+    """
     api_routes = quart.Blueprint("api_routes", __name__)
 
     # Account routes

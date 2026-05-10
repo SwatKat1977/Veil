@@ -20,6 +20,19 @@ from veil.identity_service.routes.account.register_account_route import \
 
 
 def create_account_blueprints(logger: logging.Logger) -> quart.Blueprint:
+    """Create and register account-related blueprints.
+
+    This function creates the parent account blueprint and registers
+    all account management route blueprints, such as account
+    registration routes.
+
+    Args:
+        logger: Logger instance used by account route handlers.
+
+    Returns:
+        The configured account blueprint containing all registered
+        account-related routes.
+    """
     account_blueprint = quart.Blueprint("account_routes", __name__)
 
     # Register account route
