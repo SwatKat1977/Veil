@@ -1,0 +1,4 @@
+aiohttp==3.13.5
+jsonschema==4.26.0
+pylint==4.0.5
+quart==0.20.0

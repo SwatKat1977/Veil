@@ -1,0 +1,73 @@
+"""
+Copyright 2026 Veil Development Team
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+import http
+import json
+import logging
+import quart
+from veil.common.base_api_route import BaseApiRoute
+
+
+def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
+    """Create and configure the system health API blueprint.
+
+    Args:
+        logger: Logger instance used for route registration and
+            request handling logging.
+
+    Returns:
+        A configured Quart blueprint containing the system health
+        endpoint.
+    """
+    route = LogoutAccountRoute(logger)
+
+    blueprint = quart.Blueprint('logout_account', __name__)
+
+    logger.debug("=> %s POST /accounts/logout",
+                 'Logout account session'.ljust(40))
+
+    @blueprint.route('/accounts/logout', methods=['POST'])
+    async def logout_account_request():
+        """Handle incoming system health requests.
+
+        Returns:
+            A response containing the current system health status.
+        """
+        return await route.logout_account()
+
+    return blueprint
+
+
+class LogoutAccountRoute(BaseApiRoute):
+    """Route handler for system health endpoints."""
+
+    def __init__(self, logger: logging.Logger) -> None:
+        """Initialize the health route handler.
+
+        Args:
+            logger: Parent logger used to create a child logger for
+                this route handler.
+        """
+        self._logger = logger.getChild(__name__)
+
+    async def logout_account(self) -> quart.Response:
+        """Handle a system health request.
+
+        Returns:
+            A JSON HTTP response indicating the system health status.
+        """
+        return quart.Response(json.dumps({}),
+                              status=http.HTTPStatus.OK,
+                              content_type=self.CONTENT_TYPE_JSON)

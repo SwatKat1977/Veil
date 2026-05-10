@@ -1,0 +1,101 @@
+name: Validate Branch (lint & unittests)
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+
+jobs:
+  setup:
+    runs-on: ubuntu-24.04
+    steps:
+      # Step 1: Checkout code with full history
+      - name: Checkout code with full history
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+
+      # Step 2: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'  # Adjust to your Python version
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    needs: setup  # Wait for the setup job to complete
+    outputs:
+      common_changed: ${{ steps.detect.outputs.common_changed }}
+      identity_service_changed: ${{ steps.detect.outputs.identity_service_changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}  # Checkout the head commit of the PR
+
+      - name: Fetch base branch
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}  # Fetch the base branch
+
+      - name: Detect changes in directories
+        id: detect
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+          changed_files=$(git diff --name-only origin/${{ github.event.pull_request.base.ref }} ${{ github.event.pull_request.head.sha }})
+
+          echo "Checking for changes in Veil common/shared"
+          if echo "$changed_files" | grep -qE '^(veil|tests)/common/'; then
+            echo "common_changed=true" >> $GITHUB_OUTPUT
+            echo "[INFO] Veil common or unit tests have changed"
+          else
+            echo "common_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Checking for changes in Veil Identity Service"
+          if echo "$changed_files" | grep -qE '^(veil|tests)/identity_service/'; then
+            echo "identity_service_changed=true" >> $GITHUB_OUTPUT
+            echo "[INFO] Veil Identity Service or unit tests have changed"
+          else
+            echo "identity_service_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  verify_common:
+    runs-on: ubuntu-24.04
+    needs: [setup, detect-changes]  # Wait for both setup and detect-changes
+    if: needs.detect-changes.outputs.common_changed == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      #: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/common.dev
+
+      - name: Run Pylint
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m pylint --fail-under=10.0 veil/common
+
+  verify_identity_service:
+    runs-on: ubuntu-24.04
+    needs: [setup, detect-changes]  # Wait for both setup and detect-changes
+    if: needs.detect-changes.outputs.identity_service_changed == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      #: Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/identity_service.dev
+
+      - name: Run Pylint
+        env:
+          PYTHONPATH: .
+        run: |
+          python -m pylint --fail-under=10.0 veil/identity_service
