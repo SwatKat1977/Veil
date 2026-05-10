@@ -16,6 +16,7 @@ limitations under the License.
 import logging
 import quart
 from veil.identity_service.routes.account import create_account_blueprints
+from veil.identity_service.routes.auth import create_auth_blueprints
 
 
 def create_blueprints(logger: logging.Logger) -> quart.Blueprint:
@@ -23,5 +24,8 @@ def create_blueprints(logger: logging.Logger) -> quart.Blueprint:
 
     # Account routes
     api_routes.register_blueprint(create_account_blueprints(logger))
+
+    # Account authentication routes
+    api_routes.register_blueprint(create_auth_blueprints(logger))
 
     return api_routes
