@@ -13,8 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import hashlib
 import logging
-
+import uuid
 from veil.identity_service.database import schema
 from veil.common.sqlite_interface import SqliteInterface
 
@@ -97,3 +98,63 @@ class DatabaseManager:
             self._sqlite.insert_query(
                 schema.INSERT_ROLE,
                 (role_name, description))
+
+    def _seed_default_admin_account(self) -> None:
+        """
+        Create the default administrator account if one does not exist.
+        """
+
+        admin_email = "admin@veil.local"
+        admin_password = "admin"
+
+        existing_account = self._sqlite.run_query(
+            schema.GET_ACCOUNT_BY_EMAIL,
+            (admin_email,),
+            fetch_one=True
+        )
+
+        if existing_account:
+            self._logger.debug("Default admin account already exists")
+            return
+
+        self._logger.warning(
+            "No administrator account detected, creating default admin account"
+        )
+
+        #
+        # WARNING:
+        # Temporary/simple hashing for MVP only.
+        # Replace with bcrypt/argon2 later.
+        #
+        password_hash = hashlib.sha256(admin_password.encode("utf-8")).hexdigest()
+
+        account_id = self._sqlite.insert_query(schema.INSERT_ACCOUNT,
+                                               (str(uuid.uuid4()),
+                                                admin_email,
+                                                "admin",
+                                                password_hash,
+                                                # is_validated
+                                                1,
+                                                # is_disabled
+                                                0))
+
+        if account_id is None:
+            raise RuntimeError("Failed to create default admin account")
+
+        role_result = self._sqlite.run_query(schema.GET_ROLE_ID_BY_NAME,
+                                             ("admin",),
+                                             fetch_one=True)
+
+        if not role_result:
+            raise RuntimeError("Admin role missing from database")
+
+        role_id = role_result[0]
+
+        self._sqlite.insert_query(schema.INSERT_ACCOUNT_ROLE,
+                                  (account_id, role_id))
+
+        self._logger.warning(
+            "Default admin account created "
+            "(email=%s password=%s)",
+            admin_email,
+            admin_password)

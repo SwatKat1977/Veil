@@ -129,3 +129,35 @@ SELECT schema_version
 FROM schema_metadata
 LIMIT 1;
 """
+
+GET_ACCOUNT_BY_EMAIL = """
+SELECT id
+FROM accounts
+WHERE email_address = ?;
+"""
+
+INSERT_ACCOUNT = """
+INSERT INTO accounts (
+    user_id,
+    email_address,
+    display_name,
+    password_hash,
+    is_validated,
+    is_disabled
+)
+VALUES (?, ?, ?, ?, ?, ?);
+"""
+
+GET_ROLE_ID_BY_NAME = """
+SELECT id
+FROM roles
+WHERE role_name = ?;
+"""
+
+INSERT_ACCOUNT_ROLE = """
+INSERT INTO account_roles (
+    account_id,
+    role_id
+)
+VALUES (?, ?);
+"""
