@@ -30,8 +30,8 @@ class ApiResponse:
     status_code: int = 0
     headers: dict[str, str] | None = None
     body: typing.Any = None
-    content_type: str | None  = None
-    exception_msg: str | None  = None
+    content_type: str | None = None
+    exception_msg: str | None = None
 
 
 def validate_json(schema: dict):

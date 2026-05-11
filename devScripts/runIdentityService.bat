@@ -7,4 +7,4 @@ rem set SVC_CONFIG_FILE=configs/svc.cfg
 rem set BACKEND_DB_FILENAME=databases/svc.LATEST.db
 set LOGGING_LOG_LEVEL=DEBUG
 
-quart run -p 5050 --reload
+python -m veil.identity_service.run
