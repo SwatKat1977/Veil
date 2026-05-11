@@ -32,6 +32,10 @@ class IdentityMicroservice(BaseMicroservice):
         super().__init__()
         self._quart_instance = quart_instance
 
+        self._sqlite_interface: SqliteInterface | None = None
+        self._account_repository: AccountRepository | None = None
+        self._database_manager: DatabaseManager | None = None
+
     async def _initialise(self) -> bool:
 
         self.logger.info("VEIL Identity Microservice %s", __version__)
