@@ -39,7 +39,7 @@ class IdentityMicroservice(BaseMicroservice):
         self.logger.info(LICENSE_TEXT)
 
         self._sqlite_interface = SqliteInterface(self.logger,
-                                                 "databases/identity_LATEST.d_b")
+                                                 "databases/identity_LATEST.db")
         self._account_repository = AccountRepository(self.logger,
                                                      self._sqlite_interface)
         self._database_manager = DatabaseManager(self.logger,
