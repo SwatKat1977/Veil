@@ -17,12 +17,11 @@ import enum
 import typing
 from dataclasses import dataclass
 
+
 class ConfigItemDataType(enum.Enum):
     """ Enumeration for configuration item data type """
 
-
     # Primitives
-
     BOOLEAN = enum.auto()
     INTEGER = enum.auto()
     STRING = enum.auto()
@@ -31,6 +30,7 @@ class ConfigItemDataType(enum.Enum):
     PATH = enum.auto()
     FILE = enum.auto()
     DIRECTORY = enum.auto()
+
 
 @dataclass(frozen=True)
 class ConfigurationSetupItem:
