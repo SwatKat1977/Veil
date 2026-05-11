@@ -16,8 +16,9 @@ limitations under the License.
 import configparser
 import os
 from pathlib import Path
-from typing import Any, Callable
-import configuration_setup
+from typing import Any
+from collections.abc import Callable
+import veil.common.configuration_system.configuration_setup as configuration_setup
 
 
 class ConfigurationError(Exception):
@@ -63,7 +64,7 @@ class ConfigurationManager:
         self._config_file: str = ''
         self._has_config_file: bool = False
         self._config_file_required: bool = False
-        self._layout: configuration_setup.ConfigurationSetup = None
+        self._layout: configuration_setup.ConfigurationSetup | None = None
         self._config_items: dict[str, dict[str, Any]] = {}
 
         self._type_readers: dict[
@@ -194,7 +195,7 @@ class ConfigurationManager:
 
     def _read_str(self,
                   section: str,
-                  fmt : configuration_setup.ConfigurationSetupItem) -> str | None:
+                  fmt: configuration_setup.ConfigurationSetupItem) -> str | None:
         """Read and validate a string configuration value.
 
         Args:
@@ -211,7 +212,14 @@ class ConfigurationManager:
         """
         value = self._read_raw_value(section, fmt.item_name, fmt)
 
-        if fmt.valid_values and value not in fmt.valid_values:
+        if value is not None and not isinstance(value, str):
+            raise ConfigurationError(
+                f"Configuration option '{fmt.item_name}' "
+                f"must be a string.")
+
+        if value is not None and \
+                fmt.valid_values and \
+                value not in fmt.valid_values:
             raise ConfigurationError(
                 f"Value of '{value}' for {fmt.item_name} is invalid")
 

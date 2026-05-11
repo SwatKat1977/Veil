@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import enum
-import typing
 from dataclasses import dataclass
 
 
@@ -37,30 +36,22 @@ class ConfigurationSetupItem:
     """ Configuration layout class """
 
     item_name: str
-    valid_values: typing.Optional[list]
-    is_required: bool
     item_type: ConfigItemDataType
-    default_value: typing.Optional[object]
-
-    def __init__(self, item_name: str, item_type : ConfigItemDataType,
-                 valid_values: typing.Optional[list] = None,
-                 is_required: bool = False,
-                 default_value: typing.Optional[object] = None) -> None:
-        # pylint: disable=too-many-arguments, too-many-positional-arguments
-        object.__setattr__(self, "item_name", item_name)
-        object.__setattr__(self, "item_type", item_type)
-        object.__setattr__(self, "valid_values", valid_values)
-        object.__setattr__(self, "is_required", is_required)
-        object.__setattr__(self, "default_value", default_value)
+    valid_values: list[str] | None = None
+    is_required: bool = False
+    default_value: object | None = None
+    create_if_missing: bool = False
 
 
 class ConfigurationSetup:
     """ Class that defines the configuration Format """
 
-    def __init__(self, setup_items : dict) -> None:
+    def __init__(
+            self,
+            setup_items: dict[str,list[ConfigurationSetupItem]]) -> None:
         self._items = setup_items
 
-    def get_sections(self) -> list:
+    def get_sections(self) -> list[str]:
         """
         Get a list of sections available.
 
@@ -69,7 +60,7 @@ class ConfigurationSetup:
         """
         return list(self._items.keys())
 
-    def get_section(self, name: str):
+    def get_section(self, name: str) -> list[ConfigurationSetupItem]:
         """
         Get a list of items within a given sections.
 
