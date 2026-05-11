@@ -15,9 +15,9 @@ limitations under the License.
 """
 import hashlib
 import logging
-import uuid
-from veil.identity_service.database import schema
 from veil.common.sqlite_interface import SqliteInterface
+from veil.identity_service.database import schema
+from veil.identity_service.database.account_repository import AccountRepository
 
 
 class DatabaseManager:
@@ -29,10 +29,12 @@ class DatabaseManager:
 
     def __init__(self,
                  logger: logging.Logger,
-                 sqlite_interface: SqliteInterface) -> None:
+                 sqlite_interface: SqliteInterface,
+                 account_repository: AccountRepository) -> None:
 
         self._logger = logger.getChild(__name__)
         self._sqlite = sqlite_interface
+        self._account_repository = account_repository
 
     def initialise_database(self) -> None:
         """
@@ -44,8 +46,8 @@ class DatabaseManager:
         self._create_tables()
         self._create_indexes()
         self._initialise_schema_version()
-        self._seed_default_admin_account()
         self._seed_default_roles()
+        self._seed_default_admin_account()
 
         self._logger.info("Identity service database initialized")
 
@@ -108,19 +110,15 @@ class DatabaseManager:
         admin_email = "admin@veil.local"
         admin_password = "admin"
 
-        existing_account = self._sqlite.run_query(
-            schema.GET_ACCOUNT_BY_EMAIL,
-            (admin_email,),
-            fetch_one=True
-        )
+        existing_account = self._account_repository.get_account_by_email(
+            admin_email)
 
         if existing_account:
             self._logger.debug("Default admin account already exists")
             return
 
         self._logger.warning(
-            "No administrator account detected, creating default admin account"
-        )
+            "No administrator account detected, creating default admin account")
 
         #
         # WARNING:
@@ -129,33 +127,24 @@ class DatabaseManager:
         #
         password_hash = hashlib.sha256(admin_password.encode("utf-8")).hexdigest()
 
-        account_id = self._sqlite.insert_query(schema.INSERT_ACCOUNT,
-                                               (str(uuid.uuid4()),
-                                                admin_email,
-                                                "admin",
-                                                password_hash,
-                                                # is_validated
-                                                1,
-                                                # is_disabled
-                                                0))
+        account_id = self._account_repository.create_account(
+            email_address=admin_email,
+            display_name="admin",
+            password_hash=password_hash,
+            is_validated=True,
+            is_disabled=False)
 
         if account_id is None:
             raise RuntimeError("Failed to create default admin account")
 
-        role_result = self._sqlite.run_query(schema.GET_ROLE_ID_BY_NAME,
-                                             ("admin",),
-                                             fetch_one=True)
+        role_id = self._account_repository.get_role_id("admin")
 
-        if not role_result:
+        if role_id is None:
             raise RuntimeError("Admin role missing from database")
 
-        role_id = role_result[0]
+        self._account_repository.assign_role(account_id, role_id)
 
-        self._sqlite.insert_query(schema.INSERT_ACCOUNT_ROLE,
-                                  (account_id, role_id))
-
-        self._logger.warning(
-            "Default admin account created "
-            "(email=%s password=%s)",
-            admin_email,
-            admin_password)
+        self._logger.warning("Default admin account created "
+                             "(email=%s password=%s)",
+                             admin_email,
+                             admin_password)

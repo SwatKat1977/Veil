@@ -161,3 +161,9 @@ INSERT INTO account_roles (
 )
 VALUES (?, ?);
 """
+
+GET_ACCOUNT_BY_USER_ID = """
+SELECT *
+FROM accounts
+WHERE user_id = ?;
+"""
