@@ -17,7 +17,7 @@ import asyncio
 from quart import Quart
 from veil.common.base_microservice import BaseMicroservice
 from veil.common import LICENSE_TEXT, SERVICE_COPYRIGHT_TEXT, __version__
-from veil.common.sqlite_interface import SqliteInterface
+from veil.common.sqlite_interface import SqliteInterface, SqliteInterfaceException
 from veil.identity_service.database.account_repository import AccountRepository
 from veil.identity_service.database.database_manager import DatabaseManager
 from veil.identity_service.routes import create_blueprints
@@ -39,13 +39,18 @@ class IdentityMicroservice(BaseMicroservice):
         self.logger.info(LICENSE_TEXT)
 
         self._sqlite_interface = SqliteInterface(self.logger,
-                                                 "databases/identity_LATEST.db")
+                                                 "databases/identity_LATEST.d_b")
         self._account_repository = AccountRepository(self.logger,
                                                      self._sqlite_interface)
         self._database_manager = DatabaseManager(self.logger,
                                                  self._sqlite_interface,
                                                  self._account_repository)
-        self._database_manager.initialise_database()
+        try:
+            self._sqlite_interface.ensure_valid()
+
+        except SqliteInterfaceException as ex:
+            self.logger.error("Failed to start database, reason: %s", ex)
+            return False
 
         create_blueprints(self.logger)
 
