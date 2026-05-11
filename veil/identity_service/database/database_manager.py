@@ -44,6 +44,7 @@ class DatabaseManager:
         self._create_tables()
         self._create_indexes()
         self._initialise_schema_version()
+        self._seed_default_admin_account()
         self._seed_default_roles()
 
         self._logger.info("Identity service database initialized")
