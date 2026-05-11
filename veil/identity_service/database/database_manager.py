@@ -59,7 +59,7 @@ class DatabaseManager:
         self._logger.debug("Creating database tables")
 
         for query in schema.TABLE_SCHEMA_QUERIES:
-            self._sqlite.run_query(query, commit=True)
+            self._sqlite.run_script(query)
 
     def _create_indexes(self) -> None:
         """
@@ -69,7 +69,7 @@ class DatabaseManager:
         self._logger.debug("Creating database indexes")
 
         for query in schema.INDEX_SCHEMA_QUERIES:
-            self._sqlite.run_query(query, commit=True)
+            self._sqlite.run_script(query)
 
     def _initialise_schema_version(self) -> None:
         """

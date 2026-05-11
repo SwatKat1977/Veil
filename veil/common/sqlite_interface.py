@@ -254,3 +254,17 @@ class SqliteInterface:
         except sqlite3.Error as ex:
             raise SqliteInterfaceException(
                 f"Delete query failed: {ex}") from ex
+
+    def run_script(self, query: str) -> None:
+        """
+        Execute schema/bootstrap SQL without database validation.
+        """
+
+        try:
+            with self._get_connection(validate=False) as conn:
+                conn.execute(query)
+                conn.commit()
+
+        except sqlite3.Error as ex:
+            raise SqliteInterfaceException(
+                f"Schema query failed: {ex}") from ex
