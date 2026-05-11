@@ -36,11 +36,11 @@ class ConfigItemDataType(enum.Enum):
 class ConfigurationSetupItem:
     """ Configuration layout class """
 
-    item_name : str
-    valid_values : typing.Optional[list]
-    is_required : bool
-    item_type : ConfigItemDataType
-    default_value : typing.Optional[object]
+    item_name: str
+    valid_values: typing.Optional[list]
+    is_required: bool
+    item_type: ConfigItemDataType
+    default_value: typing.Optional[object]
 
     def __init__(self, item_name: str, item_type : ConfigItemDataType,
                  valid_values: typing.Optional[list] = None,
@@ -69,7 +69,7 @@ class ConfigurationSetup:
         """
         return list(self._items.keys())
 
-    def get_section(self, name : str):
+    def get_section(self, name: str):
         """
         Get a list of items within a given sections.
 
