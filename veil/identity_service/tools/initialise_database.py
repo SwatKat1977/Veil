@@ -6,7 +6,7 @@ from veil.identity_service.database.database_manager import (
     DatabaseManager)
 
 
-DATABASE_FILENAME = "identity.db"
+DATABASE_FILENAME = "identity_LATEST.db"
 
 
 def main() -> None:

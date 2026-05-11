@@ -17,6 +17,9 @@ import asyncio
 from quart import Quart
 from veil.common.base_microservice import BaseMicroservice
 from veil.common import LICENSE_TEXT, SERVICE_COPYRIGHT_TEXT, __version__
+from veil.common.sqlite_interface import SqliteInterface
+from veil.identity_service.database.account_repository import AccountRepository
+from veil.identity_service.database.database_manager import DatabaseManager
 from veil.identity_service.routes import create_blueprints
 
 
@@ -34,6 +37,15 @@ class IdentityMicroservice(BaseMicroservice):
         self.logger.info("VEIL Identity Microservice %s", __version__)
         self.logger.info(SERVICE_COPYRIGHT_TEXT)
         self.logger.info(LICENSE_TEXT)
+
+        self._sqlite_interface = SqliteInterface(self.logger,
+                                                 "databases/identity_LATEST.db")
+        self._account_repository = AccountRepository(self.logger,
+                                                     self._sqlite_interface)
+        self._database_manager = DatabaseManager(self.logger,
+                                                 self._sqlite_interface,
+                                                 self._account_repository)
+        self._database_manager.initialise_database()
 
         create_blueprints(self.logger)
 
