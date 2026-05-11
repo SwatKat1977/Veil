@@ -80,6 +80,12 @@ jobs:
         run: |
           python -m pylint --fail-under=10.0 veil/common
 
+      # Run tests and measure coverage
+      - name: Run tests with coverage
+        run: |
+          coverage run -m unittest -v main
+          coverage report -m --fail-under=100
+
   verify_identity_service:
     runs-on: ubuntu-24.04
     needs: [setup, detect-changes]  # Wait for both setup and detect-changes
