@@ -1,3 +1,4 @@
 aiohttp==3.13.5
 pylint==4.0.5
 quart==0.20.0
+coverage==7.14.0
