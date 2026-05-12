@@ -614,3 +614,27 @@ class TestConfigurationManager(unittest.TestCase):
 
             with self.assertRaises(ConfigurationError):
                 self.manager.process_config()
+
+    def test_read_str_non_string_raises(self):
+        """Test _read_str rejects non-string values."""
+
+        fmt = ConfigurationSetupItem(
+            item_name="name",
+            item_type=ConfigItemDataType.STRING,
+            default_value=123
+        )
+
+        with self.assertRaises(ConfigurationError):
+            self.manager._read_str("app", fmt)
+
+    def test_read_bool_none_returns_none(self):
+        """Test _read_bool returns None."""
+
+        fmt = ConfigurationSetupItem(
+            item_name="enabled",
+            item_type=ConfigItemDataType.BOOLEAN
+        )
+
+        result = self.manager._read_bool("app", fmt)
+
+        self.assertIsNone(result)
