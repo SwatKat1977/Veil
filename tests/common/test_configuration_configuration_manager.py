@@ -1,3 +1,4 @@
+import configparser
 import os
 import tempfile
 import unittest
@@ -638,3 +639,126 @@ class TestConfigurationManager(unittest.TestCase):
         result = self.manager._read_bool("app", fmt)
 
         self.assertIsNone(result)
+
+    def test_read_str_returns_none(self):
+        """Test _read_str returns None."""
+
+        fmt = ConfigurationSetupItem(
+            item_name="name",
+            item_type=ConfigItemDataType.STRING
+        )
+
+        result = self.manager._read_str("app", fmt)
+
+        self.assertIsNone(result)
+
+
+    def test_read_bool_native_bool_false(self):
+        """Test native False bool branch."""
+
+        fmt = ConfigurationSetupItem(
+            item_name="enabled",
+            item_type=ConfigItemDataType.BOOLEAN,
+            default_value=False
+        )
+
+        result = self.manager._read_bool("app", fmt)
+
+        self.assertFalse(result)
+
+
+    def test_read_path_environment_expansion(self):
+        """Test environment variable expansion in paths."""
+
+        with patch.dict(os.environ, {"TEST_ROOT": "example"}):
+
+            path = self.manager._normalise_path(
+                "$TEST_ROOT/test")
+
+            self.assertIn(
+                "example",
+                str(path))
+
+
+    def test_read_file_returns_none(self):
+        """Test _read_file returns None branch."""
+
+        fmt = ConfigurationSetupItem(
+            item_name="file",
+            item_type=ConfigItemDataType.FILE
+        )
+
+        result = self.manager._read_file("app", fmt)
+
+        self.assertIsNone(result)
+
+
+    def test_read_directory_returns_none(self):
+        """Test _read_directory returns None branch."""
+
+        fmt = ConfigurationSetupItem(
+            item_name="directory",
+            item_type=ConfigItemDataType.DIRECTORY
+        )
+
+        result = self.manager._read_directory("app", fmt)
+
+        self.assertIsNone(result)
+
+
+    def test_read_raw_value_from_default(self):
+        """Test _read_raw_value default branch."""
+
+        fmt = ConfigurationSetupItem(
+            item_name="value",
+            item_type=ConfigItemDataType.STRING,
+            default_value="default"
+        )
+
+        result = self.manager._read_raw_value(
+            "app",
+            "value",
+            fmt
+        )
+
+        self.assertEqual(result, "default")
+
+    def test_read_directory_missing_without_create_raises(self):
+        """Test missing directory without auto-create raises."""
+
+        missing_path = "definitely_missing_directory_12345"
+
+        fmt = ConfigurationSetupItem(
+            item_name="directory",
+            item_type=ConfigItemDataType.DIRECTORY,
+            default_value=missing_path,
+            create_if_missing=False
+        )
+
+        with self.assertRaises(ConfigurationError):
+            self.manager._read_directory("app", fmt)
+
+    def test_read_raw_value_missing_config_option(self):
+        """Test missing config option branch."""
+
+        fmt = ConfigurationSetupItem(
+            item_name="missing",
+            item_type=ConfigItemDataType.STRING
+        )
+
+        self.manager._has_config_file = True
+
+        with patch.object(
+                self.manager._parser,
+                "get",
+                side_effect=configparser.NoOptionError(
+                    "missing",
+                    "app")):
+
+            result = self.manager._read_raw_value(
+                "app",
+                "missing",
+                fmt
+            )
+
+            self.assertIsNone(result)
