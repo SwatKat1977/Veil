@@ -17,7 +17,7 @@ import logging
 import uuid
 from typing import Any
 from veil.identity_service.database import schema
-from veil.common.sqlite_interface import SqliteInterface
+from weaver_framework.database.sqlite_interface import SqliteInterface
 
 
 class AccountRepository:

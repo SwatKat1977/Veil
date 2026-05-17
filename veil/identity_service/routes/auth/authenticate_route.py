@@ -17,7 +17,7 @@ import http
 import json
 import logging
 import quart
-from veil.common.base_api_route import BaseApiRoute
+from weaver_framework.microservice.base_api_route import BaseApiRoute
 
 
 def create_blueprint(logger: logging.Logger) -> quart.Blueprint:

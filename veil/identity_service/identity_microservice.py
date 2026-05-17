@@ -15,9 +15,10 @@ limitations under the License.
 """
 import asyncio
 from quart import Quart
-from veil.common.base_microservice import BaseMicroservice
+from weaver_framework.microservice.base_microservice import BaseMicroservice
 from veil.common import LICENSE_TEXT, SERVICE_COPYRIGHT_TEXT, __version__
-from veil.common.sqlite_interface import SqliteInterface, SqliteInterfaceException
+from weaver_framework.database.sqlite_interface import (
+    SqliteInterface, SqliteInterfaceException)
 from veil.identity_service.database.account_repository import AccountRepository
 from veil.identity_service.database.database_manager import DatabaseManager
 from veil.identity_service.routes import create_blueprints
