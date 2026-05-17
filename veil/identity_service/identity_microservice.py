@@ -20,12 +20,13 @@ from weaver_framework.microservice.base_microservice import BaseMicroservice
 from weaver_framework.database.sqlite_interface import (
     SqliteInterface, SqliteInterfaceException)
 from weaver_framework.configuration_system.configuration_manager import (
-    ConfigurationError, ConfigurationManager)
+    ConfigurationError)
 from veil.common import LICENSE_TEXT, SERVICE_COPYRIGHT_TEXT, __version__
 from veil.identity_service.database.account_repository import AccountRepository
 from veil.identity_service.database.database_manager import DatabaseManager
 from veil.identity_service.routes import create_blueprints
 from veil.identity_service.configuration_layout import CONFIGURATION_LAYOUT
+from veil.identity_service.identity_configuration import IdentityConfiguration
 
 
 class IdentityMicroservice(BaseMicroservice):
@@ -43,7 +44,7 @@ class IdentityMicroservice(BaseMicroservice):
         self._sqlite_interface: SqliteInterface | None = None
         self._account_repository: AccountRepository | None = None
         self._database_manager: DatabaseManager | None = None
-        self._config_manager: ConfigurationManager = ConfigurationManager()
+        self._config_manager: IdentityConfiguration = IdentityConfiguration()
 
     async def _initialise(self) -> bool:
 
@@ -54,16 +55,19 @@ class IdentityMicroservice(BaseMicroservice):
         if not self._manage_configuration():
             return False
 
-        database_filename: Path = Path(self._config_manager.get_entry(
-            "backend", "db_filename"))
+        db_filename: Path = Path(self._config_manager.backend_db_filename)
 
-        if not database_filename.is_file():
-            self.logger.error("Database file '%s' is missing!",
-                              database_filename)
+        if not db_filename.is_file():
+            self.logger.error("Database file '%s' is missing!", db_filename)
             return False
 
-        self._sqlite_interface = SqliteInterface(self.logger,
-                                                 "databases/identity_LATEST.db")
+        self._sqlite_interface = SqliteInterface(self.logger, db_filename)
+
+        if not self._sqlite_interface.is_valid_database():
+            self.logger.error("Database file '%s' is not a valid SQLite2 db",
+                              db_filename)
+            return False
+
         self._account_repository = AccountRepository(self.logger,
                                                      self._sqlite_interface)
         self._database_manager = DatabaseManager(self.logger,
@@ -122,11 +126,9 @@ class IdentityMicroservice(BaseMicroservice):
                           "None" if not required else config_file)
         self._logger.info("[logging]")
         self._logger.info("=> Logging log level : %s",
-                          self._config_manager.get_entry("logging",
-                                                         "log_level"))
+                          self._config_manager.logging_log_level)
         self._logger.info("[Backend]")
         self._logger.info("=> Database filename : %s",
-                          self._config_manager.get_entry("backend",
-                                                         "db_filename"))
+                          self._config_manager.backend_db_filename)
 
         return True
