@@ -1,5 +1,20 @@
+"""
+Copyright 2026 Veil Development Team
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import logging
-from veil.common.sqlite_interface import SqliteInterface
+from weaver_framework.database.sqlite_interface import SqliteInterface
 from veil.identity_service.database.account_repository import (
     AccountRepository)
 from veil.identity_service.database.database_manager import (
@@ -10,6 +25,19 @@ DATABASE_FILENAME = "identity_LATEST.db"
 
 
 def main() -> None:
+    """Initialize and prepare the identity service database.
+
+    This function configures application logging, creates the database
+    interface and repository instances, and performs database
+    initialization through the ``DatabaseManager``.
+
+    The database schema and required tables are created or validated
+    during initialization.
+
+    Raises:
+        sqlite3.Error: If a database operation fails during
+            initialization.
+    """
 
     logging.basicConfig(
         level=logging.DEBUG,
