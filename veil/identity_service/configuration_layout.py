@@ -46,7 +46,7 @@ CONFIGURATION_LAYOUT = ConfigurationSetup(
             ConfigurationSetupItem(
                 ConfigurationConstants.ITEM_BACKEND_DB_FILENAME,
                 ConfigItemDataType.STRING,
-                default_value="identity.db"),
+                is_required=True),
             ConfigurationSetupItem(
                 ConfigurationConstants.ITEM_BACKEND_ENABLED,
                 ConfigItemDataType.BOOLEAN,

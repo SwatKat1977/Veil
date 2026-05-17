@@ -14,10 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import asyncio
+from pathlib import Path
 from quart import Quart
 from weaver_framework.microservice.base_microservice import BaseMicroservice
 from weaver_framework.database.sqlite_interface import (
     SqliteInterface, SqliteInterfaceException)
+from weaver_framework.configuration_system.configuration_manager import (
+    ConfigurationError, ConfigurationManager)
 from veil.common import LICENSE_TEXT, SERVICE_COPYRIGHT_TEXT, __version__
 from veil.identity_service.database.account_repository import AccountRepository
 from veil.identity_service.database.database_manager import DatabaseManager
@@ -30,6 +33,9 @@ class IdentityMicroservice(BaseMicroservice):
 
     SERVICE_NAME = "veil.identityService"
 
+    CONFIG_FILE_ENV: str = "VEIL_IDENTITY_CONFIG_FILE"
+    CONFIG_REQUIRED_ENV: str = "VEIL_IDENTITY_CONFIG_FILE_REQUIRED"
+
     def __init__(self, quart_instance: Quart):
         super().__init__()
         self._quart_instance = quart_instance
@@ -37,12 +43,24 @@ class IdentityMicroservice(BaseMicroservice):
         self._sqlite_interface: SqliteInterface | None = None
         self._account_repository: AccountRepository | None = None
         self._database_manager: DatabaseManager | None = None
+        self._config_manager: ConfigurationManager = ConfigurationManager()
 
     async def _initialise(self) -> bool:
 
         self.logger.info("VEIL Identity Microservice %s", __version__)
         self.logger.info(SERVICE_COPYRIGHT_TEXT)
         self.logger.info(LICENSE_TEXT)
+
+        if not self._manage_configuration():
+            return False
+
+        database_filename: Path = Path(self._config_manager.get_entry(
+            "backend", "db_filename"))
+
+        if not database_filename.is_file():
+            self.logger.error("Database file '%s' is missing!",
+                              database_filename)
+            return False
 
         self._sqlite_interface = SqliteInterface(self.logger,
                                                  "databases/identity_LATEST.db")
@@ -73,3 +91,42 @@ class IdentityMicroservice(BaseMicroservice):
 
     async def _wait_forever(self) -> None:
         await self.shutdown_event.wait()
+
+    def _manage_configuration(self) -> bool:
+        """
+        Manage the service configuration.
+        """
+        error_status, required, config_file = self._check_for_configuration(
+            self.CONFIG_FILE_ENV, self.CONFIG_REQUIRED_ENV)
+        if error_status:
+            self._logger.critical(error_status)
+            return False
+
+        self._config_manager.configure(CONFIGURATION_LAYOUT,
+                                       config_file,
+                                       required)
+
+        try:
+            self._config_manager.process_config()
+
+        except (ValueError, ConfigurationError) as ex:
+            self._logger.critical("Configuration error : %s", str(ex))
+            return False
+
+        self._logger.info("Configuration")
+        self._logger.info("=============")
+
+        self._logger.info("Configuration file required: %s",
+                          "True" if required else "False")
+        self._logger.info("Configuration file : %s",
+                          "None" if not required else config_file)
+        self._logger.info("[logging]")
+        self._logger.info("=> Logging log level : %s",
+                          self._config_manager.get_entry("logging",
+                                                         "log_level"))
+        self._logger.info("[Backend]")
+        self._logger.info("=> Database filename : %s",
+                          self._config_manager.get_entry("backend",
+                                                         "db_filename"))
+
+        return True
