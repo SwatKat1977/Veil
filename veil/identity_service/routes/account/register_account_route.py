@@ -20,7 +20,6 @@ from weaver_framework.microservice.api_response import ApiResponse
 from weaver_framework.microservice.base_api_route import BaseApiRoute, validate_json
 from weaver_framework.microservice.http_content_type import HttpContentType
 from veil.identity_service.routes.route_injections import RouteInjections
-from veil.identity_service.database.database_manager import DatabaseManager
 
 
 SCHEMA_REGISTER_ACCOUNT_REQUEST: dict = {
@@ -80,7 +79,7 @@ class RegisterAccountRoute(BaseApiRoute):
 
     def __init__(self, injections: RouteInjections) -> None:
         self._logger = injections.logger.getChild(__name__)
-        self._injections: RouteInjections
+        self._injections: RouteInjections = injections
 
     @validate_json(SCHEMA_REGISTER_ACCOUNT_REQUEST)
     async def register_account(self, request_msg: ApiResponse) -> quart.Response:
@@ -90,6 +89,12 @@ class RegisterAccountRoute(BaseApiRoute):
             A JSON HTTP response indicating the result of the
             registration request.
         """
+
+        user_id = self._injections.account_repository.create_account(
+                       request_msg.body["email_address"],
+                       request_msg.body["display_name"],
+                       request_msg.body["password"])
+
         return quart.Response(json.dumps({}),
                               status=http.HTTPStatus.OK,
                               content_type=HttpContentType.JSON)

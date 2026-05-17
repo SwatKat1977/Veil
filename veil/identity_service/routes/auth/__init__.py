@@ -35,13 +35,12 @@ def create_auth_blueprints(logger: logging.Logger) -> quart.Blueprint:
         The configured authentication blueprint containing all registered
         authentication routes.
     """
-    account_blueprint = quart.Blueprint("account_routes", __name__)
+    blueprint = quart.Blueprint("authentication_routes", __name__)
 
     # Authenticate account route
-    account_blueprint.register_blueprint(
-        create_authenticate_account_blueprint(logger))
+    blueprint.register_blueprint(create_authenticate_account_blueprint(logger))
 
     # Logout account route
-    account_blueprint.register_blueprint(create_logout_blueprint(logger))
+    blueprint.register_blueprint(create_logout_blueprint(logger))
 
-    return account_blueprint
+    return blueprint

@@ -56,6 +56,8 @@ class IdentityMicroservice(BaseMicroservice):
         if not self._manage_configuration():
             return False
 
+        self._logger.setLevel(self._config_manager.logging_log_level)
+
         db_filename: Path = Path(self._config_manager.backend_db_filename)
 
         if not db_filename.is_file():
@@ -83,7 +85,8 @@ class IdentityMicroservice(BaseMicroservice):
 
         route_injections: RouteInjections = RouteInjections(
             self._logger, self._account_repository)
-        create_blueprints(route_injections)
+        self._quart_instance.register_blueprint(
+            create_blueprints(route_injections))
 
         return True
 
