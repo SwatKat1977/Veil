@@ -82,7 +82,7 @@ class IdentityMicroservice(BaseMicroservice):
             return False
 
         route_injections: RouteInjections = RouteInjections(
-            self._logger, self._database_manager)
+            self._logger, self._account_repository)
         create_blueprints(route_injections)
 
         return True

@@ -15,34 +15,53 @@ limitations under the License.
 """
 import http
 import json
-import logging
 import quart
-from weaver_framework.microservice.base_api_route import BaseApiRoute
+from weaver_framework.microservice.api_response import ApiResponse
+from weaver_framework.microservice.base_api_route import BaseApiRoute, validate_json
 from weaver_framework.microservice.http_content_type import HttpContentType
+from veil.identity_service.routes.route_injections import RouteInjections
+from veil.identity_service.database.database_manager import DatabaseManager
 
 
-def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
-    """Create and configure the register account API blueprint.
+SCHEMA_REGISTER_ACCOUNT_REQUEST: dict = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
 
-    This function creates the Quart blueprint responsible for handling
-    account registration requests. It registers the
-    ``/accounts/register`` POST endpoint and connects it to the
-    ``RegisterAccountRoute`` handler.
+    "type": "object",
+    "additionalProperties": False,
 
-    Args:
-        logger: Logger instance used for route registration and
-            request handling logging.
+    "properties":
+    {
+        "display_name":
+            {
+                "type": "string",
+                "minLength": 4,
+                "maxLength": 64
+            },
+        "email_address":
+            {
+                "type": "string",
+                "format": "email",
+                "minLength": 3,
+                "maxLength": 320
+            },
+        "password":
+            {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 128
+            },
+    },
+    "required": ["email_address", "password"]
+}
 
-    Returns:
-        A configured Quart blueprint containing the register account
-        endpoint.
-    """
-    new_route = RegisterAccountRoute(logger)
+
+def create_blueprint(injections: RouteInjections) -> quart.Blueprint:
+    new_route = RegisterAccountRoute(injections)
 
     blueprint = quart.Blueprint('register_account', __name__)
 
-    logger.debug("=> %s POST /accounts/register",
-                 'Register new account'.ljust(40))
+    injections.logger.debug("=> %s POST /accounts/register",
+                            'Register new account'.ljust(40))
 
     @blueprint.route('/accounts/register', methods=['POST'])
     async def register_account_request() -> quart.Response:
@@ -59,16 +78,12 @@ def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
 class RegisterAccountRoute(BaseApiRoute):
     """Route handler for account registration endpoints."""
 
-    def __init__(self, logger: logging.Logger) -> None:
-        """Initialize the register account route handler.
+    def __init__(self, injections: RouteInjections) -> None:
+        self._logger = injections.logger.getChild(__name__)
+        self._injections: RouteInjections
 
-        Args:
-            logger: Parent logger used to create a child logger for
-                this route handler.
-        """
-        self._logger = logger.getChild(__name__)
-
-    async def register_account(self) -> quart.Response:
+    @validate_json(SCHEMA_REGISTER_ACCOUNT_REQUEST)
+    async def register_account(self, request_msg: ApiResponse) -> quart.Response:
         """Handle an account registration request.
 
         Returns:
