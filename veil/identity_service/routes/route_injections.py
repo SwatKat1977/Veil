@@ -15,6 +15,7 @@ limitations under the License.
 """
 from dataclasses import dataclass
 import logging
+from veil.identity_service.database.database_manager import DatabaseManager
 
 
 @dataclass(slots=True, frozen=True)
@@ -26,3 +27,4 @@ class RouteInjections:
     """
 
     logger: logging.Logger
+    database_manager: DatabaseManager

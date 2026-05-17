@@ -27,6 +27,7 @@ from veil.identity_service.database.database_manager import DatabaseManager
 from veil.identity_service.routes import create_blueprints
 from veil.identity_service.configuration_layout import CONFIGURATION_LAYOUT
 from veil.identity_service.identity_configuration import IdentityConfiguration
+from veil.identity_service.routes.route_injections import RouteInjections
 
 
 class IdentityMicroservice(BaseMicroservice):
@@ -80,7 +81,9 @@ class IdentityMicroservice(BaseMicroservice):
             self.logger.error("Failed to start database, reason: %s", ex)
             return False
 
-        create_blueprints(self.logger)
+        route_injections: RouteInjections = RouteInjections(
+            self._logger, self._database_manager)
+        create_blueprints(route_injections)
 
         return True
 
