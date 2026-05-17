@@ -16,8 +16,8 @@ limitations under the License.
 import logging
 import uuid
 from typing import Any
-from veil.identity_service.database import schema
 from weaver_framework.database.sqlite_interface import SqliteInterface
+from veil.identity_service.database import schema
 
 
 class AccountRepository:
