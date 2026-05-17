@@ -15,7 +15,7 @@ limitations under the License.
 """
 import hashlib
 import logging
-from veil.common.sqlite_interface import SqliteInterface
+from weaver_framework.database.sqlite_interface import SqliteInterface
 from veil.identity_service.database import schema
 from veil.identity_service.database.account_repository import AccountRepository
 

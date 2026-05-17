@@ -17,7 +17,8 @@ import http
 import json
 import logging
 import quart
-from veil.common.base_api_route import BaseApiRoute
+from weaver_framework.microservice.base_api_route import BaseApiRoute
+from weaver_framework.microservice.http_content_type import HttpContentType
 
 
 def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
@@ -70,4 +71,4 @@ class LogoutAccountRoute(BaseApiRoute):
         """
         return quart.Response(json.dumps({}),
                               status=http.HTTPStatus.OK,
-                              content_type=self.CONTENT_TYPE_JSON)
+                              content_type=HttpContentType.JSON)
