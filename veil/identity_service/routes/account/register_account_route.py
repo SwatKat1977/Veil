@@ -13,12 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import hashlib
 import http
 import json
 import quart
 from weaver_framework.microservice.api_response import ApiResponse
 from weaver_framework.microservice.base_api_route import BaseApiRoute, validate_json
 from weaver_framework.microservice.http_content_type import HttpContentType
+from veil.identity_service.database.account_repository import AccountRepository
 from veil.identity_service.routes.route_injections import RouteInjections
 
 
@@ -50,7 +52,7 @@ SCHEMA_REGISTER_ACCOUNT_REQUEST: dict = {
                 "maxLength": 128
             },
     },
-    "required": ["email_address", "password"]
+    "required": ["display_name", "email_address", "password"]
 }
 
 
@@ -90,11 +92,42 @@ class RegisterAccountRoute(BaseApiRoute):
             registration request.
         """
 
-        user_id = self._injections.account_repository.create_account(
-                       request_msg.body["email_address"],
-                       request_msg.body["display_name"],
-                       request_msg.body["password"])
+        email_address: str = request_msg.body["email_address"].strip().lower()
+        display_name: str = request_msg.body["display_name"].strip()
+        raw_password: str = request_msg.body["password"]
+        password_hash: str = hashlib.sha256(
+            raw_password.encode("utf-8")).hexdigest()
 
-        return quart.Response(json.dumps({}),
-                              status=http.HTTPStatus.OK,
+        account_repo: AccountRepository = self._injections.account_repository
+
+        if account_repo.email_address_exists(email_address):
+            return quart.Response(
+                json.dumps({"error": "email address already exists"}),
+                status=http.HTTPStatus.CONFLICT,
+                content_type=HttpContentType.JSON)
+
+        if account_repo.display_name_exists(display_name):
+            return quart.Response(
+                json.dumps({"error": "display name already exists"}),
+                status=http.HTTPStatus.CONFLICT,
+                content_type=HttpContentType.JSON)
+
+        user_id: str | None = account_repo.create_account(email_address,
+                                                          display_name,
+                                                          password_hash)
+
+        if user_id is None:
+            self._logger.error(
+                "Failed to create account for email address '%s'",
+                email_address)
+            return quart.Response(
+                json.dumps({"error": "failed_to_create_account"}),
+                status=http.HTTPStatus.INTERNAL_SERVER_ERROR,
+                content_type=HttpContentType.JSON)
+
+        response_body: dict = {
+            "user_id": user_id
+        }
+        return quart.Response(json.dumps(response_body),
+                              status=http.HTTPStatus.CREATED,
                               content_type=HttpContentType.JSON)
