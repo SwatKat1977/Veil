@@ -167,3 +167,17 @@ SELECT *
 FROM accounts
 WHERE user_id = ?;
 """
+
+CHECK_EMAIL_ADDRESS_EXISTS = """
+SELECT 1
+FROM accounts
+WHERE email_address = ?
+LIMIT 1
+"""
+
+CHECK_DISPLAY_NAME_EXISTS = """
+SELECT 1
+FROM accounts
+WHERE display_name = ?
+LIMIT 1
+"""
