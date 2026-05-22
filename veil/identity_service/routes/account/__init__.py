@@ -20,6 +20,17 @@ from veil.identity_service.routes.route_injections import RouteInjections
 
 
 def create_account_blueprints(injections: RouteInjections) -> quart.Blueprint:
+    """Create and register all account-related API blueprints.
+
+    Aggregates all account route blueprints into a single parent
+    blueprint for registration with the Quart application.
+
+    Args:
+        injections: Shared route dependencies and injected services.
+
+    Returns:
+        A Quart blueprint containing all account-related routes.
+    """
     account_blueprint = quart.Blueprint("account_routes", __name__)
 
     # Register account route

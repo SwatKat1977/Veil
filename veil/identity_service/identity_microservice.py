@@ -64,7 +64,9 @@ class IdentityMicroservice(BaseMicroservice):
             self.logger.error("Database file '%s' is missing!", db_filename)
             return False
 
-        self._sqlite_interface = SqliteInterface(self.logger, db_filename)
+        self._sqlite_interface = SqliteInterface(
+            self.logger,
+            self._config_manager.backend_db_filename)
 
         if not self._sqlite_interface.is_valid_database():
             self.logger.error("Database file '%s' is not a valid SQLite2 db",
