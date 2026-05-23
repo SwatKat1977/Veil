@@ -15,6 +15,8 @@ limitations under the License.
 """
 import hashlib
 import logging
+import uuid
+
 from veil.identity_service.database.account_repository import \
     AccountRepository
 from veil.identity_service.models.account_creation_result import \
@@ -43,7 +45,6 @@ class AccountService:
         """Create a new account."""
         # pylint: disable=too-many-arguments, too-many-positional-arguments
 
-
         #
         # WARNING:
         # Temporary/simple hashing for MVP only.
@@ -52,9 +53,40 @@ class AccountService:
         password_hash = hashlib.sha256(
             password.encode("utf-8")).hexdigest()
 
-        return self._account_repository.create_account(
+        unique_user_id: str = str(uuid.uuid4())
+
+        account_id: int | None = self._account_repository.create_account(
+            user_id=unique_user_id,
             email_address=email_address,
             display_name=display_name,
             password_hash=password_hash,
             is_validated=is_validated,
             is_disabled=is_disabled)
+
+        if account_id is None:
+            return None
+
+        return AccountCreationResult(
+            id=account_id,
+            user_id=unique_user_id)
+
+    @property
+    def account_repository(self) -> AccountRepository:
+        return self._account_repository
+
+    def assign_role(self,
+                    account_id: int,
+                    role_name: str) -> bool:
+        """Assign a role to an account."""
+
+        role_id = self._account_repository.get_role_id(role_name)
+
+        if role_id is None:
+            self._logger.error("Role '%s' does not exist",
+                               role_name)
+            return False
+
+        self._account_repository.assign_role(account_id,
+                                             role_id)
+
+        return True
