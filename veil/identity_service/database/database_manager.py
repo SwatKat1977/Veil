@@ -17,7 +17,8 @@ import hashlib
 import logging
 from weaver_framework.database.sqlite_interface import SqliteInterface
 from veil.identity_service.database import schema
-from veil.identity_service.database.account_repository import AccountRepository
+from veil.identity_service.database.account_repository import (
+    AccountRepository, AccountCreationResult)
 
 
 class DatabaseManager:
@@ -127,14 +128,15 @@ class DatabaseManager:
         #
         password_hash = hashlib.sha256(admin_password.encode("utf-8")).hexdigest()
 
-        account_id = self._account_repository.create_account(
-            email_address=admin_email,
-            display_name="admin",
-            password_hash=password_hash,
-            is_validated=True,
-            is_disabled=False)
+        result: AccountCreationResult | None = \
+            self._account_repository.create_account(
+                email_address=admin_email,
+                display_name="admin",
+                password_hash=password_hash,
+                is_validated=True,
+                is_disabled=False)
 
-        if account_id is None:
+        if result is None:
             raise RuntimeError("Failed to create default admin account")
 
         role_id = self._account_repository.get_role_id("admin")
@@ -142,7 +144,7 @@ class DatabaseManager:
         if role_id is None:
             raise RuntimeError("Admin role missing from database")
 
-        self._account_repository.assign_role(account_id, role_id)
+        self._account_repository.assign_role(result.id, role_id)
 
         self._logger.warning("Default admin account created "
                              "(email=%s password=%s)",

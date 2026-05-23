@@ -20,7 +20,8 @@ import quart
 from weaver_framework.microservice.api_response import ApiResponse
 from weaver_framework.microservice.base_api_route import BaseApiRoute, validate_json
 from weaver_framework.microservice.http_content_type import HttpContentType
-from veil.identity_service.database.account_repository import AccountRepository
+from veil.identity_service.database.account_repository import (
+    AccountCreationResult, AccountRepository)
 from veil.identity_service.routes.route_injections import RouteInjections
 
 
@@ -151,11 +152,10 @@ class RegisterAccountRoute(BaseApiRoute):
                 status=http.HTTPStatus.CONFLICT,
                 content_type=HttpContentType.JSON)
 
-        user_id: str | None = account_repo.create_account(email_address,
-                                                          display_name,
-                                                          password_hash)
+        result: AccountCreationResult | None = account_repo.create_account(
+            email_address, display_name, password_hash)
 
-        if user_id is None:
+        if result.user_id is None:
             self._logger.error(
                 "Failed to create account for email address '%s'",
                 email_address)
@@ -164,9 +164,7 @@ class RegisterAccountRoute(BaseApiRoute):
                 status=http.HTTPStatus.INTERNAL_SERVER_ERROR,
                 content_type=HttpContentType.JSON)
 
-        response_body: dict = {
-            "user_id": user_id
-        }
+        response_body: dict = {"user_id": result.user_id}
         return quart.Response(json.dumps(response_body),
                               status=http.HTTPStatus.CREATED,
                               content_type=HttpContentType.JSON)

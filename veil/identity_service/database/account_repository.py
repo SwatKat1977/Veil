@@ -13,11 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from dataclasses import dataclass
 import logging
 import uuid
 from typing import Any
 from weaver_framework.database.sqlite_interface import SqliteInterface
 from veil.identity_service.database import schema
+
+
+@dataclass
+class AccountCreationResult:
+    id: int
+    user_id: str
 
 
 class AccountRepository:
@@ -47,7 +54,8 @@ class AccountRepository:
                        display_name: str,
                        password_hash: str,
                        is_validated: bool = False,
-                       is_disabled: bool = False) -> str | None:
+                       is_disabled: bool = False) -> \
+            AccountCreationResult | None:
         """Create a new account record.
 
         Args:
@@ -58,13 +66,14 @@ class AccountRepository:
             is_disabled: Whether the account is disabled.
 
         Returns:
-            The public user UUID if the insert succeeds,
-            otherwise None.
+            Account creation metadata containing both the
+            internal database ID and public user ID if the
+            insert succeeds, otherwise None.
         """
         # pylint: disable=too-many-positional-arguments, too-many-arguments
 
         unique_user_id: str = str(uuid.uuid4())
-        inserted_id = self._sqlite.insert_query(
+        account_id = self._sqlite.insert_query(
             schema.INSERT_ACCOUNT,
             (
                 unique_user_id,
@@ -74,10 +83,12 @@ class AccountRepository:
                 int(is_validated),
                 int(is_disabled)))
 
-        if inserted_id is None:
+        if account_id is None:
             return None
 
-        return unique_user_id
+        return AccountCreationResult(
+            id=account_id,
+            user_id=unique_user_id)
 
     def get_account_by_email(
             self,

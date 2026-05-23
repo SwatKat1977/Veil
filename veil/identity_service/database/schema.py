@@ -67,6 +67,22 @@ CREATE TABLE IF NOT EXISTS account_roles (
 );
 """
 
+CREATE_ACCOUNT_SESSIONS_TABLE = """
+CREATE TABLE IF NOT EXISTS account_sessions(
+    id TEXT PRIMARY KEY,
+    account_id INTEGER NOT NULL,
+    session_token TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    last_seen_at TEXT,
+    revoked INTEGER INTEGER NOT NULL DEFAULT 0,
+
+    FOREIGN KEY (account_id)
+        REFERENCES accounts(id)
+        ON DELETE CASCADE
+)
+"""
+
 # Indexes
 
 CREATE_ACCOUNT_EMAIL_INDEX = """
@@ -82,6 +98,16 @@ ON accounts(display_name);
 CREATE_ROLE_NAME_INDEX = """
 CREATE INDEX IF NOT EXISTS idx_roles_role_name
 ON roles(role_name);
+"""
+
+CREATE_ACCOUNT_SESSION_TOKEN_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_account_sessions_token
+ON account_sessions(session_token);
+"""
+
+CREATE_ACCOUNT_SESSION_ACCOUNT_ID_INDEX = """
+CREATE INDEX IF NOT EXISTS idx_account_sessions_account_id
+ON account_sessions(account_id);
 """
 
 # Default seed data
@@ -105,13 +131,16 @@ TABLE_SCHEMA_QUERIES = [
     CREATE_SCHEMA_METADATA_TABLE,
     CREATE_ACCOUNTS_TABLE,
     CREATE_ROLES_TABLE,
-    CREATE_ACCOUNT_ROLES_TABLE
+    CREATE_ACCOUNT_ROLES_TABLE,
+    CREATE_ACCOUNT_SESSIONS_TABLE
 ]
 
 INDEX_SCHEMA_QUERIES = [
     CREATE_ACCOUNT_EMAIL_INDEX,
     CREATE_ACCOUNT_DISPLAY_NAME_INDEX,
-    CREATE_ROLE_NAME_INDEX
+    CREATE_ROLE_NAME_INDEX,
+    CREATE_ACCOUNT_SESSION_TOKEN_INDEX,
+    CREATE_ACCOUNT_SESSION_ACCOUNT_ID_INDEX
 ]
 
 INSERT_SCHEMA_VERSION = """
