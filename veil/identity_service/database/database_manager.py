@@ -17,8 +17,10 @@ import hashlib
 import logging
 from weaver_framework.database.sqlite_interface import SqliteInterface
 from veil.identity_service.database import schema
-from veil.identity_service.database.account_repository import (
-    AccountRepository, AccountCreationResult)
+from veil.identity_service.models.account_creation_result import AccountCreationResult
+#from veil.identity_service.database.account_repository import (
+#    AccountRepository, AccountCreationResult)
+from veil.identity_service.services.account_service import AccountService
 
 
 class DatabaseManager:
@@ -31,11 +33,11 @@ class DatabaseManager:
     def __init__(self,
                  logger: logging.Logger,
                  sqlite_interface: SqliteInterface,
-                 account_repository: AccountRepository) -> None:
+                 account_service: AccountService) -> None:
 
         self._logger = logger.getChild(__name__)
         self._sqlite = sqlite_interface
-        self._account_repository = account_repository
+        self._account_service = account_service
 
     def initialise_database(self) -> None:
         """
@@ -111,8 +113,8 @@ class DatabaseManager:
         admin_email = "admin@veil.local"
         admin_password = "admin"
 
-        existing_account = self._account_repository.get_account_by_email(
-            admin_email)
+        existing_account = self._account_service.account_repository.\
+            get_account_by_email(admin_email)
 
         if existing_account:
             self._logger.debug("Default admin account already exists")
@@ -129,22 +131,22 @@ class DatabaseManager:
         password_hash = hashlib.sha256(admin_password.encode("utf-8")).hexdigest()
 
         result: AccountCreationResult | None = \
-            self._account_repository.create_account(
+            self._account_service.create_account(
                 email_address=admin_email,
                 display_name="admin",
-                password_hash=password_hash,
+                password=password_hash,
                 is_validated=True,
                 is_disabled=False)
 
         if result is None:
             raise RuntimeError("Failed to create default admin account")
 
-        role_id = self._account_repository.get_role_id("admin")
+        role_id = self._account_service.account_repository.get_role_id("admin")
 
         if role_id is None:
             raise RuntimeError("Admin role missing from database")
 
-        self._account_repository.assign_role(result.id, role_id)
+        self._account_service.account_repository.assign_role(result.id, role_id)
 
         self._logger.warning("Default admin account created "
                              "(email=%s password=%s)",

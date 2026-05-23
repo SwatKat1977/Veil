@@ -19,6 +19,8 @@ import logging
 import quart
 from weaver_framework.microservice.base_api_route import BaseApiRoute
 from weaver_framework.microservice.http_content_type import HttpContentType
+from veil.identity_service.routes.common_request_json_schema import (
+    EMAIL_ADDRESS_SCHEMA, PASSWORD_SCHEMA)
 
 
 SCHEMA_AUTHENTICATE_ACCOUNT_REQUEST: dict = {
@@ -29,19 +31,8 @@ SCHEMA_AUTHENTICATE_ACCOUNT_REQUEST: dict = {
 
     "properties":
     {
-        "email_address":
-            {
-                "type": "string",
-                "format": "email",
-                "minLength": 3,
-                "maxLength": 320
-            },
-        "password":
-            {
-                "type": "string",
-                "minLength": 8,
-                "maxLength": 128
-            },
+        "email_address": EMAIL_ADDRESS_SCHEMA,
+        "password": PASSWORD_SCHEMA,
     },
     "required": ["email_address", "password"]
 }

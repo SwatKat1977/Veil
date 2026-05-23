@@ -13,18 +13,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from dataclasses import dataclass
-import logging
-from veil.identity_service.services.account_service import AccountService
 
 
-@dataclass(slots=True, frozen=True)
-class RouteInjections:
-    """Container for dependencies injected into route handlers.
+EMAIL_ADDRESS_SCHEMA = {
+    "type": "string",
+    "format": "email",
+    "minLength": 3,
+    "maxLength": 320
+}
 
-    Attributes:
-        logger: Logger instance used for route-level logging and diagnostics.
-    """
-
-    logger: logging.Logger
-    account_service: AccountService
+PASSWORD_SCHEMA = {
+    "type": "string",
+    "minLength": 8,
+    "maxLength": 128
+}

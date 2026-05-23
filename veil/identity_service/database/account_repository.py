@@ -14,12 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import uuid
 from typing import Any
 from weaver_framework.database.sqlite_interface import SqliteInterface
 from veil.identity_service.database import schema
-from veil.identity_service.models.account_creation_result import \
-    AccountCreationResult
 
 
 class AccountRepository:
@@ -45,12 +42,12 @@ class AccountRepository:
         self._sqlite = sqlite_interface
 
     def create_account(self,
+                       user_id: str,
                        email_address: str,
                        display_name: str,
                        password_hash: str,
                        is_validated: bool = False,
-                       is_disabled: bool = False) -> \
-            AccountCreationResult | None:
+                       is_disabled: bool = False) -> int | None:
         """Create a new account record.
 
         Args:
@@ -61,29 +58,19 @@ class AccountRepository:
             is_disabled: Whether the account is disabled.
 
         Returns:
-            Account creation metadata containing both the
-            internal database ID and public user ID if the
-            insert succeeds, otherwise None.
+            Internal account ID if the insert succeeds, otherwise None.
         """
         # pylint: disable=too-many-positional-arguments, too-many-arguments
 
-        unique_user_id: str = str(uuid.uuid4())
-        account_id = self._sqlite.insert_query(
+        return self._sqlite.insert_query(
             schema.INSERT_ACCOUNT,
             (
-                unique_user_id,
+                user_id,
                 email_address,
                 display_name,
                 password_hash,
                 int(is_validated),
                 int(is_disabled)))
-
-        if account_id is None:
-            return None
-
-        return AccountCreationResult(
-            id=account_id,
-            user_id=unique_user_id)
 
     def get_account_by_email(
             self,

@@ -20,9 +20,11 @@ import quart
 from weaver_framework.microservice.api_response import ApiResponse
 from weaver_framework.microservice.base_api_route import BaseApiRoute, validate_json
 from weaver_framework.microservice.http_content_type import HttpContentType
-from veil.identity_service.database.account_repository import (
-    AccountCreationResult, AccountRepository)
 from veil.identity_service.routes.route_injections import RouteInjections
+from veil.identity_service.routes.common_request_json_schema import (
+    EMAIL_ADDRESS_SCHEMA, PASSWORD_SCHEMA)
+from veil.identity_service.models.account_creation_result import \
+    AccountCreationResult
 
 
 SCHEMA_REGISTER_ACCOUNT_REQUEST: dict = {
@@ -39,19 +41,8 @@ SCHEMA_REGISTER_ACCOUNT_REQUEST: dict = {
                 "minLength": 4,
                 "maxLength": 64
             },
-        "email_address":
-            {
-                "type": "string",
-                "format": "email",
-                "minLength": 3,
-                "maxLength": 320
-            },
-        "password":
-            {
-                "type": "string",
-                "minLength": 8,
-                "maxLength": 128
-            },
+        "email_address": EMAIL_ADDRESS_SCHEMA,
+        "password": PASSWORD_SCHEMA
     },
     "required": ["display_name", "email_address", "password"]
 }
@@ -138,7 +129,7 @@ class RegisterAccountRoute(BaseApiRoute):
         password_hash: str = hashlib.sha256(
             raw_password.encode("utf-8")).hexdigest()
 
-        account_repo: AccountRepository = self._injections.account_repository
+        account_repo = self._injections.account_service.account_repository
 
         if account_repo.email_address_exists(email_address):
             return quart.Response(
