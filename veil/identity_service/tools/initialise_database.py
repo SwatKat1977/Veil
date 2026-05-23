@@ -19,7 +19,7 @@ from veil.identity_service.database.account_repository import (
     AccountRepository)
 from veil.identity_service.database.database_manager import (
     DatabaseManager)
-
+from veil.identity_service.services.account_service import AccountService
 
 DATABASE_FILENAME = "identity_LATEST.db"
 
@@ -55,12 +55,11 @@ def main() -> None:
         logger,
         sqlite_interface
     )
-
+    account_service = AccountService(logger, account_repository)
     database_manager = DatabaseManager(
         logger,
         sqlite_interface,
-        account_repository
-    )
+        account_service)
 
     database_manager.initialise_database()
 
