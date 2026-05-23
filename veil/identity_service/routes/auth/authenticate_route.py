@@ -21,6 +21,40 @@ from weaver_framework.microservice.base_api_route import BaseApiRoute
 from weaver_framework.microservice.http_content_type import HttpContentType
 
 
+SCHEMA_AUTHENTICATE_ACCOUNT_REQUEST: dict = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+
+    "type": "object",
+    "additionalProperties": False,
+
+    "properties":
+    {
+        "email_address":
+            {
+                "type": "string",
+                "format": "email",
+                "minLength": 3,
+                "maxLength": 320
+            },
+        "password":
+            {
+                "type": "string",
+                "minLength": 8,
+                "maxLength": 128
+            },
+    },
+    "required": ["email_address", "password"]
+}
+
+
+'''
+{
+    "access_token": "...",
+    "expires_in": 86400,
+    "user_id": "..."
+}
+'''
+
 def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
     """Create the authenticate account route blueprint.
 
