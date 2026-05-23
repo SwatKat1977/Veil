@@ -18,5 +18,12 @@ from dataclasses import dataclass
 
 @dataclass
 class AccountCreationResult:
+    """Represents the result of a successfully created account.
+
+    Attributes:
+        id: The unique internal database identifier for the account.
+        user_id: The public or external user identifier associated
+            with the account.
+    """
     id: int
     user_id: str

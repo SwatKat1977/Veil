@@ -13,18 +13,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from dataclasses import dataclass
 import logging
 import uuid
 from typing import Any
 from weaver_framework.database.sqlite_interface import SqliteInterface
 from veil.identity_service.database import schema
-
-
-@dataclass
-class AccountCreationResult:
-    id: int
-    user_id: str
+from veil.identity_service.models.account_creation_result import \
+    AccountCreationResult
 
 
 class AccountRepository:
