@@ -30,7 +30,13 @@ class AccountService:
     def __init__(self,
                  logger: logging.Logger,
                  account_repository: AccountRepository) -> None:
-        """Initialize the account service."""
+        """Initialize the account service.
+
+        Args:
+            logger: Logger instance used for service logging.
+            account_repository: Repository used for account persistence
+                and retrieval operations.
+        """
 
         self._logger = logger.getChild(__name__)
         self._account_repository = account_repository
@@ -42,7 +48,30 @@ class AccountService:
                        is_validated: bool = False,
                        is_disabled: bool = False) -> \
             AccountCreationResult | None:
-        """Create a new account."""
+        """Create a new account.
+
+        Generates a unique user identifier, hashes the provided password,
+        and persists the account using the configured repository.
+
+        Warning:
+            SHA256 is currently used for password hashing as a temporary
+            MVP solution. This should be replaced with Argon2 or another
+            secure password hashing algorithm.
+
+        Args:
+            email_address: Email address associated with the account.
+            display_name: Public display name for the account.
+            password: Plain text password provided during account creation.
+            is_validated: Indicates whether the account has already been
+                validated.
+            is_disabled: Indicates whether the account should be created
+                in a disabled state.
+
+        Returns:
+            AccountCreationResult containing the created account ID and
+            generated user ID if successful, otherwise None.
+        """
+
         # pylint: disable=too-many-arguments, too-many-positional-arguments
 
         #
@@ -72,12 +101,26 @@ class AccountService:
 
     @property
     def account_repository(self) -> AccountRepository:
+        """Return the account repository used by the service.
+
+        Returns:
+            The configured account repository instance.
+        """
         return self._account_repository
 
     def assign_role(self,
                     account_id: int,
                     role_name: str) -> bool:
-        """Assign a role to an account."""
+        """Assign a role to an account.
+
+        Args:
+            account_id: Database ID of the account receiving the role.
+            role_name: Name of the role to assign.
+
+        Returns:
+            True if the role was successfully assigned, otherwise False
+            if the role does not exist.
+        """
 
         role_id = self._account_repository.get_role_id(role_name)
 

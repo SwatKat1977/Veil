@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import hashlib
 import http
 import json
 import quart
@@ -126,8 +125,6 @@ class RegisterAccountRoute(BaseApiRoute):
         email_address: str = request_msg.body["email_address"].strip().lower()
         display_name: str = request_msg.body["display_name"].strip()
         raw_password: str = request_msg.body["password"]
-        password_hash: str = hashlib.sha256(
-            raw_password.encode("utf-8")).hexdigest()
 
         account_repo = self._injections.account_service.account_repository
 
@@ -143,8 +140,10 @@ class RegisterAccountRoute(BaseApiRoute):
                 status=http.HTTPStatus.CONFLICT,
                 content_type=HttpContentType.JSON)
 
-        result: AccountCreationResult | None = account_repo.create_account(
-            email_address, display_name, password_hash)
+        result: AccountCreationResult | None = \
+            self._injections.account_service.create_account(
+                email_address,
+                display_name, raw_password)
 
         if result.user_id is None:
             self._logger.error(

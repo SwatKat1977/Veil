@@ -28,6 +28,7 @@ from veil.identity_service.routes import create_blueprints
 from veil.identity_service.configuration_layout import CONFIGURATION_LAYOUT
 from veil.identity_service.identity_configuration import IdentityConfiguration
 from veil.identity_service.routes.route_injections import RouteInjections
+from veil.identity_service.services.account_service import AccountService
 
 
 class IdentityMicroservice(BaseMicroservice):
@@ -44,6 +45,7 @@ class IdentityMicroservice(BaseMicroservice):
 
         self._sqlite_interface: SqliteInterface | None = None
         self._account_repository: AccountRepository | None = None
+        self._account_service: AccountService | None = None
         self._database_manager: DatabaseManager | None = None
         self._config_manager: IdentityConfiguration = IdentityConfiguration()
 
@@ -75,9 +77,11 @@ class IdentityMicroservice(BaseMicroservice):
 
         self._account_repository = AccountRepository(self.logger,
                                                      self._sqlite_interface)
+        self._account_service = AccountService(self.logger,
+                                               self._account_repository)
         self._database_manager = DatabaseManager(self.logger,
                                                  self._sqlite_interface,
-                                                 self._account_repository)
+                                                 self._account_service)
         try:
             self._sqlite_interface.ensure_valid()
 
@@ -86,7 +90,7 @@ class IdentityMicroservice(BaseMicroservice):
             return False
 
         route_injections: RouteInjections = RouteInjections(
-            self._logger, self._account_repository)
+            self._logger, self._account_service)
         self._quart_instance.register_blueprint(
             create_blueprints(route_injections))
 
