@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import uuid
 from typing import Any
 from weaver_framework.database.sqlite_interface import SqliteInterface
 from veil.identity_service.database import schema
@@ -43,6 +42,7 @@ class AccountRepository:
         self._sqlite = sqlite_interface
 
     def create_account(self,
+                       user_id: str,
                        email_address: str,
                        display_name: str,
                        password_hash: str,
@@ -58,15 +58,14 @@ class AccountRepository:
             is_disabled: Whether the account is disabled.
 
         Returns:
-            The inserted database account ID if the insert succeeds,
-            otherwise None.
+            Internal account ID if the insert succeeds, otherwise None.
         """
         # pylint: disable=too-many-positional-arguments, too-many-arguments
 
         return self._sqlite.insert_query(
             schema.INSERT_ACCOUNT,
             (
-                str(uuid.uuid4()),
+                user_id,
                 email_address,
                 display_name,
                 password_hash,
@@ -138,3 +137,33 @@ class AccountRepository:
         """
         self._sqlite.insert_query(schema.INSERT_ACCOUNT_ROLE,
                                   (account_id, role_id))
+
+    def email_address_exists(self, email_address: str) -> bool:
+        """Check whether an email address already exists.
+
+        Args:
+            email_address: Email address to check.
+
+        Returns:
+            True if the email address already exists,
+            otherwise False.
+        """
+        result = self._sqlite.run_query(schema.CHECK_EMAIL_ADDRESS_EXISTS,
+                                        (email_address,),
+                                        fetch_one=True)
+        return bool(result)
+
+    def display_name_exists(self, display_name: str) -> bool:
+        """Check whether a display name already exists.
+
+        Args:
+            display_name: Display name to check.
+
+        Returns:
+            True if the display name already exists,
+            otherwise False.
+        """
+        result = self._sqlite.run_query(schema.CHECK_DISPLAY_NAME_EXISTS,
+                                        (display_name,),
+                                        fetch_one=True)
+        return bool(result)

@@ -27,6 +27,8 @@ from veil.identity_service.database.database_manager import DatabaseManager
 from veil.identity_service.routes import create_blueprints
 from veil.identity_service.configuration_layout import CONFIGURATION_LAYOUT
 from veil.identity_service.identity_configuration import IdentityConfiguration
+from veil.identity_service.routes.route_injections import RouteInjections
+from veil.identity_service.services.account_service import AccountService
 
 
 class IdentityMicroservice(BaseMicroservice):
@@ -43,6 +45,7 @@ class IdentityMicroservice(BaseMicroservice):
 
         self._sqlite_interface: SqliteInterface | None = None
         self._account_repository: AccountRepository | None = None
+        self._account_service: AccountService | None = None
         self._database_manager: DatabaseManager | None = None
         self._config_manager: IdentityConfiguration = IdentityConfiguration()
 
@@ -55,13 +58,17 @@ class IdentityMicroservice(BaseMicroservice):
         if not self._manage_configuration():
             return False
 
+        self._logger.setLevel(self._config_manager.logging_log_level)
+
         db_filename: Path = Path(self._config_manager.backend_db_filename)
 
         if not db_filename.is_file():
             self.logger.error("Database file '%s' is missing!", db_filename)
             return False
 
-        self._sqlite_interface = SqliteInterface(self.logger, db_filename)
+        self._sqlite_interface = SqliteInterface(
+            self.logger,
+            self._config_manager.backend_db_filename)
 
         if not self._sqlite_interface.is_valid_database():
             self.logger.error("Database file '%s' is not a valid SQLite2 db",
@@ -70,9 +77,11 @@ class IdentityMicroservice(BaseMicroservice):
 
         self._account_repository = AccountRepository(self.logger,
                                                      self._sqlite_interface)
+        self._account_service = AccountService(self.logger,
+                                               self._account_repository)
         self._database_manager = DatabaseManager(self.logger,
                                                  self._sqlite_interface,
-                                                 self._account_repository)
+                                                 self._account_service)
         try:
             self._sqlite_interface.ensure_valid()
 
@@ -80,7 +89,10 @@ class IdentityMicroservice(BaseMicroservice):
             self.logger.error("Failed to start database, reason: %s", ex)
             return False
 
-        create_blueprints(self.logger)
+        route_injections: RouteInjections = RouteInjections(
+            self._logger, self._account_service)
+        self._quart_instance.register_blueprint(
+            create_blueprints(route_injections))
 
         return True
 

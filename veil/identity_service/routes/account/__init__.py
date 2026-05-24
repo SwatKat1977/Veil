@@ -13,29 +13,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import logging
 import quart
 from veil.identity_service.routes.account.register_account_route import \
     create_blueprint as register_account_blueprint
+from veil.identity_service.routes.route_injections import RouteInjections
 
 
-def create_account_blueprints(logger: logging.Logger) -> quart.Blueprint:
-    """Create and register account-related blueprints.
+def create_account_blueprints(injections: RouteInjections) -> quart.Blueprint:
+    """Create and register all account-related API blueprints.
 
-    This function creates the parent account blueprint and registers
-    all account management route blueprints, such as account
-    registration routes.
+    Aggregates all account route blueprints into a single parent
+    blueprint for registration with the Quart application.
 
     Args:
-        logger: Logger instance used by account route handlers.
+        injections: Shared route dependencies and injected services.
 
     Returns:
-        The configured account blueprint containing all registered
-        account-related routes.
+        A Quart blueprint containing all account-related routes.
     """
     account_blueprint = quart.Blueprint("account_routes", __name__)
 
     # Register account route
-    account_blueprint.register_blueprint(register_account_blueprint(logger))
+    account_blueprint.register_blueprint(register_account_blueprint(injections))
 
     return account_blueprint

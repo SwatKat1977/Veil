@@ -13,14 +13,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import logging
 import quart
 from veil.identity_service.routes.account import create_account_blueprints
 from veil.identity_service.routes.auth import create_auth_blueprints
 from veil.identity_service.routes.system import create_system_blueprints
+from veil.identity_service.routes.route_injections import RouteInjections
 
 
-def create_blueprints(logger: logging.Logger) -> quart.Blueprint:
+def create_blueprints(injections: RouteInjections) -> quart.Blueprint:
     """Create and register all API route blueprints.
 
     This function creates the root API blueprint and registers all
@@ -28,8 +28,7 @@ def create_blueprints(logger: logging.Logger) -> quart.Blueprint:
     management and authentication routes.
 
     Args:
-        logger: Logger instance used by route handlers throughout
-            the API.
+        injections: Dataclass for route injections.
 
     Returns:
         The configured root API blueprint containing all registered
@@ -38,12 +37,12 @@ def create_blueprints(logger: logging.Logger) -> quart.Blueprint:
     api_routes = quart.Blueprint("api_routes", __name__)
 
     # Account routes
-    api_routes.register_blueprint(create_account_blueprints(logger))
+    api_routes.register_blueprint(create_account_blueprints(injections))
 
     # Account authentication routes
-    api_routes.register_blueprint(create_auth_blueprints(logger))
+    api_routes.register_blueprint(create_auth_blueprints(injections.logger))
 
     # Systems routes
-    api_routes.register_blueprint(create_system_blueprints(logger))
+    api_routes.register_blueprint(create_system_blueprints(injections.logger))
 
     return api_routes
