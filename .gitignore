@@ -1,9 +1,16 @@
+# PyCharm intermediate files
 .idea
 
+# Common Python virtual environment directories
 .venv
 venv
 
+# Python intermediate files
 __pycache__
+
+# SQLite database runtime files
+*.db-shm
+*.db-wal
 
 # Coverage exclusions
 .coverage
