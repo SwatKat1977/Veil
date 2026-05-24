@@ -15,6 +15,8 @@ limitations under the License.
 """
 import logging
 import uuid
+from typing import Any
+
 from argon2 import PasswordHasher
 from veil.identity_service.database.account_repository import \
     AccountRepository
@@ -39,7 +41,7 @@ class AccountService:
 
         self._logger = logger.getChild(__name__)
         self._account_repository = account_repository
-        self._password_hasher = PasswordHasher()
+        self._password_hasher: PasswordHasher = PasswordHasher()
 
     def create_account(self,
                        email_address: str,
@@ -88,15 +90,6 @@ class AccountService:
             id=account_id,
             user_id=unique_user_id)
 
-    @property
-    def account_repository(self) -> AccountRepository:
-        """Return the account repository used by the service.
-
-        Returns:
-            The configured account repository instance.
-        """
-        return self._account_repository
-
     def assign_role(self,
                     account_id: int,
                     role_name: str) -> bool:
@@ -122,3 +115,23 @@ class AccountService:
                                              role_id)
 
         return True
+
+    def get_account_by_email(
+            self,
+            email_address: str) -> tuple[Any, ...] | tuple:
+        return self._account_repository.get_account_by_email(
+            email_address)
+
+    def get_role_id(self, role_name: str) -> int | None:
+        return self._account_repository.get_role_id(role_name)
+
+    def assign_role(self,
+                    account_id: int,
+                    role_id: int) -> None:
+        return self._account_repository.assign_role(account_id, role_id)
+
+    def email_address_exists(self, email_address: str) -> bool:
+        return self._account_repository.email_address_exists(email_address)
+
+    def display_name_exists(self, display_name: str) -> bool:
+        return self._account_repository.display_name_exists(display_name)
