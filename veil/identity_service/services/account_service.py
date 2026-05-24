@@ -13,10 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import hashlib
 import logging
 import uuid
-
+from argon2 import PasswordHasher
 from veil.identity_service.database.account_repository import \
     AccountRepository
 from veil.identity_service.models.account_creation_result import \
@@ -40,6 +39,7 @@ class AccountService:
 
         self._logger = logger.getChild(__name__)
         self._account_repository = account_repository
+        self._password_hasher = PasswordHasher()
 
     def create_account(self,
                        email_address: str,
@@ -52,11 +52,6 @@ class AccountService:
 
         Generates a unique user identifier, hashes the provided password,
         and persists the account using the configured repository.
-
-        Warning:
-            SHA256 is currently used for password hashing as a temporary
-            MVP solution. This should be replaced with Argon2 or another
-            secure password hashing algorithm.
 
         Args:
             email_address: Email address associated with the account.
@@ -74,13 +69,7 @@ class AccountService:
 
         # pylint: disable=too-many-arguments, too-many-positional-arguments
 
-        #
-        # WARNING:
-        # Temporary/simple hashing for MVP only.
-        # Replace with Argon2 later.
-        #
-        password_hash = hashlib.sha256(
-            password.encode("utf-8")).hexdigest()
+        password_hash = self._password_hasher.hash(password)
 
         unique_user_id: str = str(uuid.uuid4())
 
