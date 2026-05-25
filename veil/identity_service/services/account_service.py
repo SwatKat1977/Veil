@@ -25,8 +25,7 @@ from veil.identity_service.models.account_creation_result import \
 
 
 class AccountService:
-    """Business logic related to account management."""
-    # pylint: disable=too-few-public-methods
+    """Provide business logic related to account management operations."""
 
     def __init__(self,
                  logger: logging.Logger,
@@ -119,18 +118,38 @@ class AccountService:
     def get_account_by_email(
             self,
             email_address: str) -> tuple[Any, ...] | tuple:
+        """Retrieve an account by email address.
+
+        Args:
+            email_address: Email address associated with the account.
+
+        Returns:
+            Tuple containing account data if the account exists,
+            otherwise an empty tuple.
+        """
         return self._account_repository.get_account_by_email(
             email_address)
 
     def get_role_id(self, role_name: str) -> int | None:
+        """Retrieve the database ID for a role.
+
+        Args:
+            role_name: Name of the role to retrieve.
+
+        Returns:
+            Database ID of the role if found, otherwise None.
+        """
         return self._account_repository.get_role_id(role_name)
 
-    def assign_role(self,
-                    account_id: int,
-                    role_id: int) -> None:
-        return self._account_repository.assign_role(account_id, role_id)
-
     def email_address_exists(self, email_address: str) -> bool:
+        """Determine whether an email address already exists.
+
+        Args:
+            email_address: Email address to check.
+
+        Returns:
+            True if the email address already exists, otherwise False.
+        """
         return self._account_repository.email_address_exists(email_address)
 
     def display_name_exists(self, display_name: str) -> bool:
