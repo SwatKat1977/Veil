@@ -13,15 +13,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import logging
 import quart
 from veil.identity_service.routes.auth.authenticate_route import \
     create_blueprint as create_authenticate_account_blueprint
 from veil.identity_service.routes.auth.logout_route import \
     create_blueprint as create_logout_blueprint
+from veil.identity_service.routes.route_injections import RouteInjections
 
 
-def create_auth_blueprints(logger: logging.Logger) -> quart.Blueprint:
+def create_auth_blueprints(injections: RouteInjections) -> quart.Blueprint:
     """Create and register authentication-related blueprints.
 
     This function creates the parent authentication blueprint and registers
@@ -29,7 +29,7 @@ def create_auth_blueprints(logger: logging.Logger) -> quart.Blueprint:
     and logout routes.
 
     Args:
-        logger: Logger instance used by authentication route handlers.
+        injections: Dataclass for route injections.
 
     Returns:
         The configured authentication blueprint containing all registered
@@ -38,9 +38,10 @@ def create_auth_blueprints(logger: logging.Logger) -> quart.Blueprint:
     blueprint = quart.Blueprint("authentication_routes", __name__)
 
     # Authenticate account route
-    blueprint.register_blueprint(create_authenticate_account_blueprint(logger))
+    blueprint.register_blueprint(create_authenticate_account_blueprint(injections))
 
     # Logout account route
-    blueprint.register_blueprint(create_logout_blueprint(logger))
+    blueprint.register_blueprint(create_logout_blueprint(
+        injections.logger))
 
     return blueprint

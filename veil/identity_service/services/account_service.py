@@ -16,10 +16,12 @@ limitations under the License.
 import logging
 import uuid
 from typing import Any
-
 from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from veil.identity_service.database.account_repository import \
     AccountRepository
+from veil.identity_service.models.account_authentication_result import \
+    AccountAuthenticationResult
 from veil.identity_service.models.account_creation_result import \
     AccountCreationResult
 
@@ -154,3 +156,52 @@ class AccountService:
 
     def display_name_exists(self, display_name: str) -> bool:
         return self._account_repository.display_name_exists(display_name)
+
+    def authenticate_account(
+            self,
+            email_address: str,
+            password: str) -> AccountAuthenticationResult | None:
+        """Authenticate an account using email and password.
+
+        Args:
+            email_address: Email address associated with the account.
+            password: Plain text password supplied during authentication.
+
+        Returns:
+            AuthenticationResult if authentication succeeds,
+            otherwise None.
+        """
+
+        account = self._account_repository.get_full_account_by_email(
+            email_address.strip().lower())
+
+        if not account:
+            return None
+
+        account_id = account[0]
+        user_id = account[1]
+        display_name = account[3]
+        password_hash = account[4]
+        is_disabled = bool(account[6])
+
+        if is_disabled:
+            self._logger.warning(
+                "Authentication rejected for disabled account '%s'",
+                email_address)
+            return None
+
+        try:
+            self._password_hasher.verify(
+                password_hash,
+                password)
+
+        except VerifyMismatchError:
+            self._logger.warning(
+                "Authentication failed for '%s'",
+                email_address)
+            return None
+
+        return AccountAuthenticationResult(
+            account_id=account_id,
+            user_id=user_id,
+            display_name=display_name)

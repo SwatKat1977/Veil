@@ -15,10 +15,12 @@ limitations under the License.
 """
 import http
 import json
-import logging
 import quart
-from weaver_framework.microservice.base_api_route import BaseApiRoute
+from weaver_framework.microservice.api_response import ApiResponse
+from weaver_framework.microservice.base_api_route import (
+    BaseApiRoute, validate_json)
 from weaver_framework.microservice.http_content_type import HttpContentType
+from veil.identity_service.routes.route_injections import RouteInjections
 from veil.identity_service.routes.common_request_json_schema import (
     EMAIL_ADDRESS_SCHEMA, PASSWORD_SCHEMA)
 
@@ -38,15 +40,7 @@ SCHEMA_AUTHENTICATE_ACCOUNT_REQUEST: dict = {
 }
 
 
-'''
-{
-    "access_token": "...",
-    "expires_in": 86400,
-    "user_id": "..."
-}
-'''
-
-def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
+def create_blueprint(injections: RouteInjections) -> quart.Blueprint:
     """Create the authenticate account route blueprint.
 
     This function creates and configures the blueprint responsible
@@ -54,17 +48,17 @@ def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
     used to authenticate user accounts.
 
     Args:
-        logger: Logger instance used for route logging and diagnostics.
+        injections: Shared route dependencies and injected services.
 
     Returns:
         The configured authentication account blueprint.
     """
-    route = AuthenticateAccountRoute(logger)
+    route = AuthenticateAccountRoute(injections)
 
     blueprint = quart.Blueprint('authenticate_account', __name__)
 
-    logger.debug("=> %s POST /accounts/authenticate",
-                 'Authenticate an account'.ljust(40))
+    injections.logger.debug("=> %s POST /accounts/authenticate",
+                            'Authenticate an account'.ljust(40))
 
     @blueprint.route('/accounts/authenticate', methods=['POST'])
     async def authenticate_account_request():
@@ -82,22 +76,48 @@ def create_blueprint(logger: logging.Logger) -> quart.Blueprint:
 class AuthenticateAccountRoute(BaseApiRoute):
     """Route handler for account authentication operations."""
 
-    def __init__(self, logger: logging.Logger) -> None:
+    def __init__(self, injections: RouteInjections) -> None:
         """Initialize the authenticate account route handler.
 
         Args:
-            logger: Parent logger instance used to create a
-                route-specific logger.
+            injections: Shared route dependencies and injected services.
         """
-        self._logger = logger.getChild(__name__)
+        self._logger = injections.logger.getChild(__name__)
+        self._injections: RouteInjections = injections
 
-    async def authenticate_account(self) -> quart.Response:
+    @validate_json(SCHEMA_AUTHENTICATE_ACCOUNT_REQUEST)
+    async def authenticate_account(
+            self,
+            request_msg: ApiResponse) -> quart.Response:
         """Authenticate an account request.
 
         Returns:
             A JSON HTTP response indicating the authentication
             request was processed successfully.
         """
-        return quart.Response(json.dumps({}),
+
+        email_address: str = request_msg.body["email_address"].strip().lower()
+        password: str = request_msg.body["password"]
+
+        result = self._injections.account_service.authenticate_account(
+            email_address=email_address,
+            password=password
+        )
+
+        if result is None:
+            return quart.Response(
+                json.dumps({
+                    "error": "invalid_credentials"
+                }),
+                status=http.HTTPStatus.UNAUTHORIZED,
+                content_type=HttpContentType.JSON
+            )
+
+        response_body = {
+            "access_token": "...",
+            "expires_in": 86400,
+            "user_id": "..."
+        }
+        return quart.Response(json.dumps(response_body),
                               status=http.HTTPStatus.OK,
                               content_type=HttpContentType.JSON)
