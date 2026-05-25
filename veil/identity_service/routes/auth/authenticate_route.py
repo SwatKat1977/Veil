@@ -68,6 +68,7 @@ def create_blueprint(injections: RouteInjections) -> quart.Blueprint:
             The HTTP response returned by the authentication route
             handler.
         """
+        # pylint: disable=no-value-for-parameter
         return await route.authenticate_account()
 
     return blueprint
