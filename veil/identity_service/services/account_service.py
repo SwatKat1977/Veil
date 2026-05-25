@@ -13,19 +13,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import hashlib
 import logging
 import uuid
-
+from typing import Any
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from veil.identity_service.database.account_repository import \
     AccountRepository
+from veil.identity_service.models.account_authentication_result import \
+    AccountAuthenticationResult
 from veil.identity_service.models.account_creation_result import \
     AccountCreationResult
 
 
 class AccountService:
-    """Business logic related to account management."""
-    # pylint: disable=too-few-public-methods
+    """Provide business logic related to account management operations."""
 
     def __init__(self,
                  logger: logging.Logger,
@@ -40,6 +42,7 @@ class AccountService:
 
         self._logger = logger.getChild(__name__)
         self._account_repository = account_repository
+        self._password_hasher: PasswordHasher = PasswordHasher()
 
     def create_account(self,
                        email_address: str,
@@ -52,11 +55,6 @@ class AccountService:
 
         Generates a unique user identifier, hashes the provided password,
         and persists the account using the configured repository.
-
-        Warning:
-            SHA256 is currently used for password hashing as a temporary
-            MVP solution. This should be replaced with Argon2 or another
-            secure password hashing algorithm.
 
         Args:
             email_address: Email address associated with the account.
@@ -74,13 +72,7 @@ class AccountService:
 
         # pylint: disable=too-many-arguments, too-many-positional-arguments
 
-        #
-        # WARNING:
-        # Temporary/simple hashing for MVP only.
-        # Replace with Argon2 later.
-        #
-        password_hash = hashlib.sha256(
-            password.encode("utf-8")).hexdigest()
+        password_hash = self._password_hasher.hash(password)
 
         unique_user_id: str = str(uuid.uuid4())
 
@@ -98,15 +90,6 @@ class AccountService:
         return AccountCreationResult(
             id=account_id,
             user_id=unique_user_id)
-
-    @property
-    def account_repository(self) -> AccountRepository:
-        """Return the account repository used by the service.
-
-        Returns:
-            The configured account repository instance.
-        """
-        return self._account_repository
 
     def assign_role(self,
                     account_id: int,
@@ -133,3 +116,101 @@ class AccountService:
                                              role_id)
 
         return True
+
+    def get_account_by_email(
+            self,
+            email_address: str) -> tuple[Any, ...] | tuple:
+        """Retrieve an account by email address.
+
+        Args:
+            email_address: Email address associated with the account.
+
+        Returns:
+            Tuple containing account data if the account exists,
+            otherwise an empty tuple.
+        """
+        return self._account_repository.get_account_by_email(
+            email_address)
+
+    def get_role_id(self, role_name: str) -> int | None:
+        """Retrieve the database ID for a role.
+
+        Args:
+            role_name: Name of the role to retrieve.
+
+        Returns:
+            Database ID of the role if found, otherwise None.
+        """
+        return self._account_repository.get_role_id(role_name)
+
+    def email_address_exists(self, email_address: str) -> bool:
+        """Determine whether an email address already exists.
+
+        Args:
+            email_address: Email address to check.
+
+        Returns:
+            True if the email address already exists, otherwise False.
+        """
+        return self._account_repository.email_address_exists(email_address)
+
+    def display_name_exists(self, display_name: str) -> bool:
+        """Check whether a display name already exists.
+
+        Args:
+            display_name: Display name to check.
+
+        Returns:
+            True if the display name already exists,
+            otherwise False.
+        """
+        return self._account_repository.display_name_exists(display_name)
+
+    def authenticate_account(
+            self,
+            email_address: str,
+            password: str) -> AccountAuthenticationResult | None:
+        """Authenticate an account using email and password.
+
+        Args:
+            email_address: Email address associated with the account.
+            password: Plain text password supplied during authentication.
+
+        Returns:
+            AuthenticationResult if authentication succeeds,
+            otherwise None.
+        """
+
+        account = self._account_repository.get_full_account_by_email(
+            email_address.strip().lower())
+
+        if not account:
+            return None
+
+        account_id = account[0]
+        user_id = account[1]
+        display_name = account[3]
+        password_hash = account[4]
+        is_disabled = bool(account[6])
+
+        if is_disabled:
+            self._logger.warning(
+                "Authentication rejected for disabled account '%s'",
+                email_address)
+            return None
+
+        try:
+            self._password_hasher.verify(
+                password_hash,
+                password)
+
+        except VerifyMismatchError:
+            self._logger.warning(
+                "Authentication failed for '%s'",
+                email_address)
+            return None
+
+        return AccountAuthenticationResult(
+            account_id=account_id,
+            user_id=user_id,
+            display_name=display_name)

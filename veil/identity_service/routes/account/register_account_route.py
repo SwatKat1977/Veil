@@ -126,15 +126,15 @@ class RegisterAccountRoute(BaseApiRoute):
         display_name: str = request_msg.body["display_name"].strip()
         raw_password: str = request_msg.body["password"]
 
-        account_repo = self._injections.account_service.account_repository
+        account_svc = self._injections.account_service
 
-        if account_repo.email_address_exists(email_address):
+        if account_svc.email_address_exists(email_address):
             return quart.Response(
                 json.dumps({"error": "email address already exists"}),
                 status=http.HTTPStatus.CONFLICT,
                 content_type=HttpContentType.JSON)
 
-        if account_repo.display_name_exists(display_name):
+        if account_svc.display_name_exists(display_name):
             return quart.Response(
                 json.dumps({"error": "display name already exists"}),
                 status=http.HTTPStatus.CONFLICT,

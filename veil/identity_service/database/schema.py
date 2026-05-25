@@ -210,3 +210,18 @@ FROM accounts
 WHERE display_name = ?
 LIMIT 1
 """
+
+GET_FULL_ACCOUNT_BY_EMAIL: str = """
+SELECT
+    id,
+    user_id,
+    email_address,
+    display_name,
+    password_hash,
+    is_validated,
+    is_disabled,
+    failed_login_attempts
+FROM accounts
+WHERE email_address = ?
+LIMIT 1;
+"""

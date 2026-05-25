@@ -113,8 +113,8 @@ class DatabaseManager:
         admin_email = "admin@veil.local"
         admin_password = "admin"
 
-        existing_account = self._account_service.account_repository.\
-            get_account_by_email(admin_email)
+        existing_account = self._account_service.get_account_by_email(
+            admin_email)
 
         if existing_account:
             self._logger.debug("Default admin account already exists")
@@ -141,12 +141,12 @@ class DatabaseManager:
         if result is None:
             raise RuntimeError("Failed to create default admin account")
 
-        role_id = self._account_service.account_repository.get_role_id("admin")
+        role_id = self._account_service.get_role_id("admin")
 
         if role_id is None:
             raise RuntimeError("Admin role missing from database")
 
-        self._account_service.account_repository.assign_role(result.id, role_id)
+        self._account_service.assign_role(result.id, role_id)
 
         self._logger.warning("Default admin account created "
                              "(email=%s password=%s)",

@@ -40,7 +40,7 @@ def create_blueprints(injections: RouteInjections) -> quart.Blueprint:
     api_routes.register_blueprint(create_account_blueprints(injections))
 
     # Account authentication routes
-    api_routes.register_blueprint(create_auth_blueprints(injections.logger))
+    api_routes.register_blueprint(create_auth_blueprints(injections))
 
     # Systems routes
     api_routes.register_blueprint(create_system_blueprints(injections.logger))
