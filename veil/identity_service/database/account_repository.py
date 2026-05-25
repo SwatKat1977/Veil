@@ -167,3 +167,21 @@ class AccountRepository:
                                         (display_name,),
                                         fetch_one=True)
         return bool(result)
+
+    def get_full_account_by_email(
+            self,
+            email_address: str) -> tuple[Any, ...] | tuple:
+        """Fetch a complete account record by email address.
+
+        Args:
+            email_address: Email address associated with the account.
+
+        Returns:
+            A tuple containing the full account record if found,
+            otherwise an empty tuple.
+        """
+
+        return self._sqlite.run_query(
+            schema.GET_FULL_ACCOUNT_BY_EMAIL,
+            (email_address,),
+            fetch_one=True)
