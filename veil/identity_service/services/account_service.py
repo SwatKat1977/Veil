@@ -155,6 +155,15 @@ class AccountService:
         return self._account_repository.email_address_exists(email_address)
 
     def display_name_exists(self, display_name: str) -> bool:
+        """Check whether a display name already exists.
+
+        Args:
+            display_name: Display name to check.
+
+        Returns:
+            True if the display name already exists,
+            otherwise False.
+        """
         return self._account_repository.display_name_exists(display_name)
 
     def authenticate_account(
